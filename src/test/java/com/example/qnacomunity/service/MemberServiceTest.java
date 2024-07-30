@@ -12,7 +12,8 @@ import com.example.qnacomunity.dto.form.MemberForm.SignUpForm;
 import com.example.qnacomunity.dto.response.MemberResponse;
 import com.example.qnacomunity.entity.Member;
 import com.example.qnacomunity.repository.MemberRepository;
-import com.example.qnacomunity.security.JwtUtil;
+import com.example.qnacomunity.security.JwtProvider;
+import com.example.qnacomunity.type.Role;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class MemberServiceTest {
   private BCryptPasswordEncoder bCryptPasswordEncoder;
 
   @Mock
-  private JwtUtil jwtUtil;
+  private JwtProvider jwtProvider;
 
   @InjectMocks
   private MemberService memberService;
@@ -46,21 +47,21 @@ class MemberServiceTest {
         .password("asdfasdf123!")
         .email("abc@naver.com")
         .nickName("abc")
-        .passCheck("asdfasdf123!")
+        .passwordCheck("asdfasdf123!")
         .build();
 
     Member member = Member.builder()
         .loginId("abc")
         .password("1")
         .profileUrl("url")
-        .role("user")
+        .role(Role.ROLE_USER)
         .score(0)
         .nickName("abc")
         .email("abc@naver.com")
         .createdAt(LocalDateTime.now())
         .build();
 
-    given(memberRepository.findByLoginId(anyString()))
+    given(memberRepository.findByLoginIdAndDeletedAtIsNull(anyString()))
         .willReturn(Optional.empty());
 
     given(memberRepository.save(any()))
@@ -89,7 +90,7 @@ class MemberServiceTest {
         .loginId("abc")
         .password("1")
         .profileUrl("url")
-        .role("user")
+        .role(Role.ROLE_USER)
         .score(0)
         .nickName("abc")
         .email("abc@naver.com")
@@ -102,7 +103,7 @@ class MemberServiceTest {
     given(bCryptPasswordEncoder.matches(any(), any()))
         .willReturn(true);
 
-    given(jwtUtil.createToken(any(), any()))
+    given(jwtProvider.createToken(any(), any()))
         .willReturn("token");
 
     //when
@@ -110,29 +111,6 @@ class MemberServiceTest {
 
     //then
     assertEquals("token", token);
-  }
-
-  @Test
-  void getInfo() {
-
-    //given
-    Member member = Member.builder()
-        .loginId("abc")
-        .password("1")
-        .profileUrl("url")
-        .role("user")
-        .score(0)
-        .nickName("abc")
-        .email("abc@naver.com")
-        .createdAt(LocalDateTime.now())
-        .build();
-
-    //when
-    MemberResponse memberResponse = memberService.getInfo(member);
-
-    //then
-    assertEquals("abc", memberResponse.getNickName());
-
   }
 
   @Test
@@ -144,19 +122,19 @@ class MemberServiceTest {
         .nickName("abc")
         .build();
 
-    Member member = Member.builder()
+    MemberResponse member = MemberResponse.builder()
         .loginId("abc")
         .password("1")
         .profileUrl("url")
-        .role("user")
+        .role(Role.ROLE_USER)
         .score(0)
         .nickName("abc")
         .email("abc@naver.com")
         .createdAt(LocalDateTime.now())
         .build();
 
-    given(bCryptPasswordEncoder.encode(any()))
-        .willReturn("encodedPassword");
+    given(memberRepository.findById(any()))
+        .willReturn(Optional.ofNullable(Member.builder().nickName("abc").build()));
 
     //when
     MemberResponse memberResponse = memberService.updateInfo(member, signUpForm);
@@ -166,19 +144,30 @@ class MemberServiceTest {
   }
 
   @Test
-  void updatePass() {
+  void updatePassword() {
     //given
-    MemberForm.PassChangeForm passChangeForm = MemberForm.PassChangeForm.builder()
-        .oldPass("asdfasdf123!")
-        .newPass("newpass123!")
-        .newPassCheck("newpass123!")
+    MemberForm.PasswordChangeForm passwordChangeForm = MemberForm.PasswordChangeForm.builder()
+        .oldPassword("asdfasdf123!")
+        .newPassword("newpass123!")
+        .newPasswordCheck("newpass123!")
+        .build();
+
+    MemberResponse memberResponse = MemberResponse.builder()
+        .loginId("abc")
+        .password("1")
+        .profileUrl("url")
+        .role(Role.ROLE_USER)
+        .score(0)
+        .nickName("abc")
+        .email("abc@naver.com")
+        .createdAt(LocalDateTime.now())
         .build();
 
     Member member = Member.builder()
         .loginId("abc")
         .password("1")
         .profileUrl("url")
-        .role("user")
+        .role(Role.ROLE_USER)
         .score(0)
         .nickName("abc")
         .email("abc@naver.com")
@@ -194,9 +183,12 @@ class MemberServiceTest {
     given(bCryptPasswordEncoder.encode(any()))
         .willReturn("newPassword");
 
+    given(memberRepository.findById(any()))
+        .willReturn(Optional.of(member));
+
     //when
     ArgumentCaptor<Member> captor = ArgumentCaptor.forClass(Member.class);
-    memberService.updatePass(member, passChangeForm);
+    memberService.updatePassword(memberResponse, passwordChangeForm);
 
     //then
     verify(memberRepository, times(1)).save(captor.capture());
@@ -207,20 +199,34 @@ class MemberServiceTest {
   void delete() {
 
     //given
-    Member member = Member.builder()
+    MemberResponse memberResponse = MemberResponse.builder()
         .loginId("abc")
         .password("1")
         .profileUrl("url")
-        .role("user")
+        .role(Role.ROLE_USER)
         .score(0)
         .nickName("abc")
         .email("abc@naver.com")
         .createdAt(LocalDateTime.now())
         .build();
 
+    Member member = Member.builder()
+        .loginId("abc")
+        .password("1")
+        .profileUrl("url")
+        .role(Role.ROLE_USER)
+        .score(0)
+        .nickName("abc")
+        .email("abc@naver.com")
+        .createdAt(LocalDateTime.now())
+        .build();
+
+    given(memberRepository.findById(any()))
+        .willReturn(Optional.of(member));
+
     //when
     ArgumentCaptor<Member> captor = ArgumentCaptor.forClass(Member.class);
-    memberService.delete(member);
+    memberService.delete(memberResponse);
 
     //then
     verify(memberRepository, times(1)).save(captor.capture());

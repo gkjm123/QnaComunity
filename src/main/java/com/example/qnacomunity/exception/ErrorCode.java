@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCode {
+  MEMBER_NOT_FOUND("회원을 찾을 수 없습니다."),
   Q_NOT_FOUND("질문을 찾을 수 없습니다."),
   Q_MEMBER_NOT_MATCH("질문자가 아닙니다."),
   Q_ANSWERED("답변이 달린 질문은 수정, 삭제 할 수 없습니다."),
