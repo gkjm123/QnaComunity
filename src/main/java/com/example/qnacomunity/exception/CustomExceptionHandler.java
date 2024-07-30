@@ -14,4 +14,10 @@ public class CustomExceptionHandler {
     log.warn("커스텀 에러 발생: {}", e.getMessage());
     return ResponseEntity.badRequest().body(e.getMessage());
   }
+
+  @ExceptionHandler(FormException.class)
+  public ResponseEntity<String> formExceptionHandler(final FormException e) {
+    log.warn("양식 에러 발생: {}", e.getMessage());
+    return ResponseEntity.badRequest().body(e.getMessage());
+  }
 }

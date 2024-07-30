@@ -16,7 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
-  private final JwtUtil jwtUtil;
+  private final JwtProvider jwtProvider;
   private final MemberDetailService memberDetailService;
 
   @Override
@@ -28,9 +28,9 @@ public class JwtFilter extends OncePerRequestFilter {
     String token = request.getHeader("TOKEN");
 
     //토큰이 존재하고 파싱 가능할 때 Authentication 생성,저장
-    if (token != null && jwtUtil.getLoginId(token) != null) {
+    if (token != null && jwtProvider.getLoginId(token) != null) {
 
-      String loginId = jwtUtil.getLoginId(token);
+      String loginId = jwtProvider.getLoginId(token);
       CustomUserDetail userDetails = memberDetailService.loadUserByUsername(loginId);
 
       Authentication auth =

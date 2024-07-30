@@ -1,5 +1,6 @@
 package com.example.qnacomunity.security;
 
+import com.example.qnacomunity.dto.response.MemberResponse;
 import com.example.qnacomunity.entity.Member;
 import com.example.qnacomunity.repository.MemberRepository;
 import com.example.qnacomunity.service.MemberService;
@@ -46,10 +47,10 @@ public class Oauth2UserService extends DefaultOAuth2UserService {
       member = memberRepository.save(member);
 
       //새로 가입된 회원 UserDetail 반환
-      return new Oauth2UserDetail(atr, member);
+      return new Oauth2UserDetail(atr, MemberResponse.from(member));
     }
 
     //회원 정보가 있으면 해당 회원 UserDetail 반환
-    return new Oauth2UserDetail(atr, optionalMember.get());
+    return new Oauth2UserDetail(atr, MemberResponse.from(optionalMember.get()));
   }
 }

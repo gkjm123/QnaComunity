@@ -9,8 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
 
-  Optional<Member> findByLoginId(String loginId);
-
   Optional<Member> findByLoginIdAndDeletedAtIsNull(String loginId);
 
 }

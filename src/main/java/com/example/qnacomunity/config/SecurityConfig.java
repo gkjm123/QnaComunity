@@ -1,7 +1,7 @@
 package com.example.qnacomunity.config;
 
 import com.example.qnacomunity.security.JwtFilter;
-import com.example.qnacomunity.security.JwtUtil;
+import com.example.qnacomunity.security.JwtProvider;
 import com.example.qnacomunity.security.MemberDetailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +19,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final JwtUtil jwtUtil;
+  private final JwtProvider jwtProvider;
   private final MemberDetailService memberDetailService;
 
   @Bean
@@ -28,17 +28,17 @@ public class SecurityConfig {
     http //page 부분은 프론트 에서 구현
         .authorizeHttpRequests((auth) -> auth
             .requestMatchers(AntPathRequestMatcher.antMatcher("/page/home")).permitAll()
-            .requestMatchers(AntPathRequestMatcher.antMatcher("/page/sign-in")).permitAll()
-            .requestMatchers(AntPathRequestMatcher.antMatcher("/page/sign-up")).permitAll()
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/page/registration")).permitAll()
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/page/login")).permitAll()
             .requestMatchers(AntPathRequestMatcher.antMatcher("/page/logout")).permitAll()
-            .requestMatchers(AntPathRequestMatcher.antMatcher("/member/sign-in")).permitAll()
-            .requestMatchers(AntPathRequestMatcher.antMatcher("/member/sign-up")).permitAll()
-            .requestMatchers(AntPathRequestMatcher.antMatcher("/member/get-role")).permitAll()
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/member/registration")).permitAll()
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/member/login")).permitAll()
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/member/role")).permitAll()
             .anyRequest().authenticated()
         );
 
     http //JWT 토큰 확인 필터를 UsernamePasswordAuthenticationFilter 보다 앞에 위치
-        .addFilterBefore(new JwtFilter(jwtUtil, memberDetailService),
+        .addFilterBefore(new JwtFilter(jwtProvider, memberDetailService),
             UsernamePasswordAuthenticationFilter.class);
 
     http //로그아웃
@@ -52,9 +52,9 @@ public class SecurityConfig {
         .csrf(AbstractHttpConfigurer::disable);
 
     http //oauth 구글 로그인
-        .oauth2Login((auth) -> auth.loginPage("/page/sign-in")
+        .oauth2Login((auth) -> auth.loginPage("/page/login")
             .defaultSuccessUrl("/page/home")
-            .failureUrl("/page/sign-in")
+            .failureUrl("/page/login")
             .permitAll());
 
     return http.build();
