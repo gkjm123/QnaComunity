@@ -1,5 +1,6 @@
 package com.example.qnacomunity.security;
 
+import com.example.qnacomunity.dto.response.MemberResponse;
 import com.example.qnacomunity.entity.Member;
 import java.util.Collection;
 import java.util.List;
@@ -10,29 +11,29 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 @Data
 public class MemberDetail implements CustomUserDetail {
 
-  private final Member member;
+  private final MemberResponse memberResponse;
 
   @Override
   public String getUsername() {
-    return member.getLoginId();
+    return memberResponse.getLoginId();
   }
 
   @Override
   public String getPassword() {
-    return member.getPassword();
+    return memberResponse.getPassword();
   }
 
   public String getName() {
-    return member.getNickName();
+    return memberResponse.getNickName();
   }
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return List.of(new SimpleGrantedAuthority(member.getRole()));
+    return List.of(new SimpleGrantedAuthority(memberResponse.getRole().toString()));
   }
 
   @Override
-  public Member getMember() {
-    return member;
+  public MemberResponse getMemberResponse() {
+    return memberResponse;
   }
 }

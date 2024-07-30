@@ -1,6 +1,9 @@
 package com.example.qnacomunity.entity;
 
+import com.example.qnacomunity.type.Role;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,7 +31,10 @@ public class Member {
   private String password;
   private String nickName;
   private String email;
-  private String role;
+
+  @Enumerated(EnumType.STRING)
+  private Role role;
+
   private String profileUrl;
   private int score;
 

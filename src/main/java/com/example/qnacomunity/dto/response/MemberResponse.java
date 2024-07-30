@@ -1,6 +1,7 @@
 package com.example.qnacomunity.dto.response;
 
 import com.example.qnacomunity.entity.Member;
+import com.example.qnacomunity.type.Role;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,9 +17,11 @@ import lombok.Setter;
 public class MemberResponse {
 
   private Long id;
+  private String loginId;
+  private String password;
   private String nickName;
   private String email;
-  private String role;
+  private Role role;
   private int score;
   private String profileUrl;
   private LocalDateTime createdAt;

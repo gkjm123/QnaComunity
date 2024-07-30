@@ -2,15 +2,17 @@ package com.example.qnacomunity.service;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.example.qnacomunity.dto.form.MemberForm;
+import com.example.qnacomunity.dto.form.MemberForm.PasswordChangeForm;
 import com.example.qnacomunity.dto.form.MemberForm.SignInform;
 import com.example.qnacomunity.dto.form.MemberForm.SignUpForm;
+import com.example.qnacomunity.dto.form.MemberForm.UpdateInfoForm;
 import com.example.qnacomunity.dto.response.MemberResponse;
 import com.example.qnacomunity.entity.Member;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.MemberRepository;
-import com.example.qnacomunity.security.JwtUtil;
+import com.example.qnacomunity.security.JwtProvider;
+import com.example.qnacomunity.type.Role;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -29,7 +31,7 @@ public class MemberService {
 
   private final MemberRepository memberRepository;
   private final BCryptPasswordEncoder bCryptPasswordEncoder;
-  private final JwtUtil jwtUtil;
+  private final JwtProvider jwtProvider;
   private final AmazonS3 amazonS3;
 
   @Value("${cloud.aws.s3.bucket}")
@@ -39,12 +41,12 @@ public class MemberService {
   public MemberResponse signUp(SignUpForm form) {
 
     //비밀번호 확인란 일치 여부
-    if (!Objects.equals(form.getPassword(), form.getPassCheck())) {
+    if (!Objects.equals(form.getPassword(), form.getPasswordCheck())) {
       throw new CustomException(ErrorCode.PASS_CHECK_FAIL);
     }
 
     //아이디 중복 확인
-    if (memberRepository.findByLoginId(form.getLoginId()).isPresent()) {
+    if (memberRepository.findByLoginIdAndDeletedAtIsNull(form.getLoginId()).isPresent()) {
       throw new CustomException(ErrorCode.ID_EXIST);
     }
 
@@ -70,15 +72,13 @@ public class MemberService {
     }
 
     //JWT 토큰 생성
-    return jwtUtil.createToken(member.getLoginId(), member.getRole());
-  }
-
-  public MemberResponse getInfo(Member member) {
-    return MemberResponse.from(member);
+    return jwtProvider.createToken(member.getLoginId(), member.getRole());
   }
 
   @Transactional
-  public MemberResponse updateInfo(Member member, MemberForm.UpdateInfoForm form) {
+  public MemberResponse updateInfo(MemberResponse memberResponse, UpdateInfoForm form) {
+
+    Member member = getMember(memberResponse);
 
     //닉네임,이메일 정보 변경
     member.setNickName(form.getNickName());
@@ -88,25 +88,29 @@ public class MemberService {
   }
 
   @Transactional
-  public MemberResponse updatePass(Member member, MemberForm.PassChangeForm form) {
+  public MemberResponse updatePassword(MemberResponse memberResponse, PasswordChangeForm form) {
+
+    Member member = getMember(memberResponse);
 
     //이전 비밀번호 일치 체크
-    if (!bCryptPasswordEncoder.matches(form.getOldPass(), member.getPassword())) {
+    if (!bCryptPasswordEncoder.matches(form.getOldPassword(), member.getPassword())) {
       throw new CustomException(ErrorCode.PASS_NOT_MATCH);
     }
 
     //새 비밀번호, 새 비밀번호 확인 일치 체크
-    if (!Objects.equals(form.getNewPass(), form.getNewPassCheck())) {
+    if (!Objects.equals(form.getNewPassword(), form.getNewPasswordCheck())) {
       throw new CustomException(ErrorCode.PASS_CHECK_FAIL);
     }
 
     //비밀번호 업데이트
-    member.setPassword(bCryptPasswordEncoder.encode(form.getNewPass()));
+    member.setPassword(bCryptPasswordEncoder.encode(form.getNewPassword()));
     return MemberResponse.from(memberRepository.save(member));
   }
 
   @Transactional
-  public void saveFile(Member member, MultipartFile file) throws IOException {
+  public void saveFile(MemberResponse memberResponse, MultipartFile file) throws IOException {
+
+    Member member = getMember(memberResponse);
 
     //프로필 사진 업로드 시 S3 에 파일 저장, url 받기
     String originalFilename = file.getOriginalFilename();
@@ -122,24 +126,30 @@ public class MemberService {
   }
 
   @Transactional
-  public void delete(Member member) {
+  public void delete(MemberResponse memberResponse) {
+
+    Member member = getMember(memberResponse);
 
     //deleted_at 현재 시각으로 설정
     member.setDeletedAt(LocalDateTime.now());
 
-    //로그인 아이디 + _deleted_ + 탈퇴시간 으로 아이디 변경
-    member.setLoginId(member.getLoginId() + "_deleted_" + LocalDateTime.now());
     memberRepository.save(member);
   }
 
   public Member getNewMember(String loginId, String nickName, String email, String password) {
+
     return Member.builder()
         .loginId(loginId)
         .password(bCryptPasswordEncoder.encode(password))
         .nickName(nickName)
         .email(email)
-        .role("ROLE_USER")
-        .profileUrl("기본 프로필 사진 URL")
+        .role(Role.ROLE_USER)
         .build();
+  }
+
+  public Member getMember(MemberResponse memberResponse) {
+
+    return memberRepository.findById(memberResponse.getId())
+        .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
   }
 }

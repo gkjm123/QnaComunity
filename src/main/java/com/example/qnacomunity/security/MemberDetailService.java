@@ -1,5 +1,6 @@
 package com.example.qnacomunity.security;
 
+import com.example.qnacomunity.dto.response.MemberResponse;
 import com.example.qnacomunity.entity.Member;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
@@ -19,6 +20,6 @@ public class MemberDetailService implements UserDetailsService {
     Member member = memberRepository.findByLoginIdAndDeletedAtIsNull(loginId)
         .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
 
-    return new MemberDetail(member);
+    return new MemberDetail(MemberResponse.from(member));
   }
 }

@@ -20,7 +20,7 @@ public class MemberForm {
     private String password;
 
     @NotBlank(message = "비밀번호 확인을 입력해주세요.")
-    private String passCheck;
+    private String passwordCheck;
 
     @Size(min = 2, max = 10, message = "양식 오류: 닉네임을 2~10자 사이로 입력해주세요.")
     private String nickName;
@@ -42,16 +42,16 @@ public class MemberForm {
 
   @Getter
   @Builder
-  public static class PassChangeForm {
+  public static class PasswordChangeForm {
 
     @NotBlank(message = "이전 비밀번호를 입력해주세요.")
-    private String oldPass;
+    private String oldPassword;
 
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,20}$", message = "양식 오류: 소문자,대문자,숫자를 포함한 8~20자의 비밀번호를 입력해주세요.")
-    private String newPass;
+    private String newPassword;
 
     @NotBlank(message = "비밀번호 확인을 입력해주세요.")
-    private String newPassCheck;
+    private String newPasswordCheck;
   }
 
   @Getter

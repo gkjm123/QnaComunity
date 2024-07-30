@@ -2,8 +2,10 @@ package com.example.qnacomunity.controller;
 
 import com.example.qnacomunity.dto.form.MemberForm;
 import com.example.qnacomunity.dto.response.MemberResponse;
+import com.example.qnacomunity.exception.FormException;
 import com.example.qnacomunity.security.CustomUserDetail;
 import com.example.qnacomunity.service.MemberService;
+import com.example.qnacomunity.type.Role;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.Objects;
@@ -29,24 +31,24 @@ public class MemberController {
   private final MemberService memberService;
 
   //회원 가입
-  @PostMapping("/sign-up")
+  @PostMapping("/registration")
   public ResponseEntity<?> signUp(@Valid @RequestBody MemberForm.SignUpForm form, Errors errors) {
 
     //회원 가입 양식 에러 체크
     if (errors.hasErrors()) {
-      return ResponseEntity.badRequest().body(errors.getAllErrors().get(0).getDefaultMessage());
+      throw new FormException(errors.getAllErrors().get(0).getDefaultMessage());
     }
 
     return ResponseEntity.ok(memberService.signUp(form));
   }
 
   //로그인
-  @GetMapping("/sign-in")
+  @GetMapping("/login")
   public ResponseEntity<String> signIn(@Valid @RequestBody MemberForm.SignInform form,
       Errors errors) {
 
     if (errors.hasErrors()) {
-      return ResponseEntity.badRequest().body(errors.getAllErrors().get(0).getDefaultMessage());
+      throw new FormException(errors.getAllErrors().get(0).getDefaultMessage());
     }
 
     //JWT 토큰 생성
@@ -56,14 +58,14 @@ public class MemberController {
   }
 
   //멤버 역할 확인
-  @GetMapping("/get-role")
-  public ResponseEntity<String> getRole(@AuthenticationPrincipal CustomUserDetail cd) {
-    if (cd == null) {
+  @GetMapping("/role")
+  public ResponseEntity<String> getRole(@AuthenticationPrincipal CustomUserDetail userDetail) {
+    if (userDetail == null) {
       return ResponseEntity.ok("비회원");
 
     } else {
 
-      if (Objects.equals(cd.getMember().getRole(), "ROLE_MANAGER")) {
+      if (Objects.equals(userDetail.getMemberResponse().getRole(), Role.ROLE_MANAGER)) {
         return ResponseEntity.ok("관리자");
 
       } else {
@@ -74,51 +76,51 @@ public class MemberController {
   }
 
   //멤버 정보 확인
-  @GetMapping("/get-info")
-  public ResponseEntity<MemberResponse> getInfo(@AuthenticationPrincipal CustomUserDetail cd) {
-    return ResponseEntity.ok(memberService.getInfo(cd.getMember()));
+  @GetMapping("/info")
+  public ResponseEntity<MemberResponse> getInfo(@AuthenticationPrincipal CustomUserDetail userDetail) {
+    return ResponseEntity.ok(userDetail.getMemberResponse());
   }
 
   //멤버 정보 수정
-  @PutMapping("/update-info")
-  public ResponseEntity<?> updateInfo(@AuthenticationPrincipal CustomUserDetail cd,
+  @PutMapping("/info")
+  public ResponseEntity<?> updateInfo(@AuthenticationPrincipal CustomUserDetail userDetail,
       @Valid @RequestBody MemberForm.UpdateInfoForm form, Errors errors
   ) {
     if (errors.hasErrors()) {
-      return ResponseEntity.badRequest().body(errors.getAllErrors().get(0).getDefaultMessage());
+      throw new FormException(errors.getAllErrors().get(0).getDefaultMessage());
     }
-    return ResponseEntity.ok(memberService.updateInfo(cd.getMember(), form));
+    return ResponseEntity.ok(memberService.updateInfo(userDetail.getMemberResponse(), form));
   }
 
   //프로필 사진 변경
-  @PutMapping("/update-profile")
+  @PutMapping("/profile")
   public ResponseEntity<String> updateProfile(
-      @AuthenticationPrincipal CustomUserDetail cd,
+      @AuthenticationPrincipal CustomUserDetail userDetail,
       @RequestParam MultipartFile file) throws IOException {
 
     if (!file.isEmpty()) {
-      memberService.saveFile(cd.getMember(), file);
+      memberService.saveFile(userDetail.getMemberResponse(), file);
     }
 
     return ResponseEntity.ok("프로필 업데이트 완료");
   }
 
   //패스워드 변경
-  @PutMapping("/update-pass")
-  public ResponseEntity<?> updatePass(@AuthenticationPrincipal CustomUserDetail cd,
-      @Valid @RequestBody MemberForm.PassChangeForm form,
+  @PutMapping("/password")
+  public ResponseEntity<?> updatePassword(@AuthenticationPrincipal CustomUserDetail userDetail,
+      @Valid @RequestBody MemberForm.PasswordChangeForm form,
       Errors errors
   ) {
     if (errors.hasErrors()) {
-      return ResponseEntity.badRequest().body(errors.getAllErrors().get(0).getDefaultMessage());
+      throw new FormException(errors.getAllErrors().get(0).getDefaultMessage());
     }
-    return ResponseEntity.ok(memberService.updatePass(cd.getMember(), form));
+    return ResponseEntity.ok(memberService.updatePassword(userDetail.getMemberResponse(), form));
   }
 
   //회원 탈퇴
-  @DeleteMapping("/delete")
-  public ResponseEntity<String> delete(@AuthenticationPrincipal CustomUserDetail cd) {
-    memberService.delete(cd.getMember());
+  @DeleteMapping("/removal")
+  public ResponseEntity<String> delete(@AuthenticationPrincipal CustomUserDetail userDetail) {
+    memberService.delete(userDetail.getMemberResponse());
     return ResponseEntity.ok("회원 탈퇴 완료");
   }
 }
