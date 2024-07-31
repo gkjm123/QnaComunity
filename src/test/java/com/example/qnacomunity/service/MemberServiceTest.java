@@ -61,7 +61,7 @@ class MemberServiceTest {
         .createdAt(LocalDateTime.now())
         .build();
 
-    given(memberRepository.findByLoginIdAndDeletedAtIsNull(anyString()))
+    given(memberRepository.findByLoginId(anyString()))
         .willReturn(Optional.empty());
 
     given(memberRepository.save(any()))
@@ -97,7 +97,7 @@ class MemberServiceTest {
         .createdAt(LocalDateTime.now())
         .build();
 
-    given(memberRepository.findByLoginIdAndDeletedAtIsNull(anyString()))
+    given(memberRepository.findByLoginId(anyString()))
         .willReturn(Optional.of(member));
 
     given(bCryptPasswordEncoder.matches(any(), any()))

@@ -2,7 +2,6 @@ package com.example.qnacomunity.controller;
 
 import com.example.qnacomunity.dto.form.MemberForm;
 import com.example.qnacomunity.dto.response.MemberResponse;
-import com.example.qnacomunity.exception.FormException;
 import com.example.qnacomunity.security.CustomUserDetail;
 import com.example.qnacomunity.service.MemberService;
 import com.example.qnacomunity.type.Role;
@@ -12,7 +11,6 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,24 +30,14 @@ public class MemberController {
 
   //회원 가입
   @PostMapping("/registration")
-  public ResponseEntity<?> signUp(@Valid @RequestBody MemberForm.SignUpForm form, Errors errors) {
-
-    //회원 가입 양식 에러 체크
-    if (errors.hasErrors()) {
-      throw new FormException(errors.getAllErrors().get(0).getDefaultMessage());
-    }
+  public ResponseEntity<?> signUp(@Valid @RequestBody MemberForm.SignUpForm form) {
 
     return ResponseEntity.ok(memberService.signUp(form));
   }
 
   //로그인
   @GetMapping("/login")
-  public ResponseEntity<String> signIn(@Valid @RequestBody MemberForm.SignInform form,
-      Errors errors) {
-
-    if (errors.hasErrors()) {
-      throw new FormException(errors.getAllErrors().get(0).getDefaultMessage());
-    }
+  public ResponseEntity<String> signIn(@Valid @RequestBody MemberForm.SignInform form) {
 
     //JWT 토큰 생성
     String token = memberService.signIn(form);
@@ -84,11 +72,9 @@ public class MemberController {
   //멤버 정보 수정
   @PutMapping("/info")
   public ResponseEntity<?> updateInfo(@AuthenticationPrincipal CustomUserDetail userDetail,
-      @Valid @RequestBody MemberForm.UpdateInfoForm form, Errors errors
+      @Valid @RequestBody MemberForm.UpdateInfoForm form
   ) {
-    if (errors.hasErrors()) {
-      throw new FormException(errors.getAllErrors().get(0).getDefaultMessage());
-    }
+
     return ResponseEntity.ok(memberService.updateInfo(userDetail.getMemberResponse(), form));
   }
 
@@ -108,12 +94,9 @@ public class MemberController {
   //패스워드 변경
   @PutMapping("/password")
   public ResponseEntity<?> updatePassword(@AuthenticationPrincipal CustomUserDetail userDetail,
-      @Valid @RequestBody MemberForm.PasswordChangeForm form,
-      Errors errors
+      @Valid @RequestBody MemberForm.PasswordChangeForm form
   ) {
-    if (errors.hasErrors()) {
-      throw new FormException(errors.getAllErrors().get(0).getDefaultMessage());
-    }
+
     return ResponseEntity.ok(memberService.updatePassword(userDetail.getMemberResponse(), form));
   }
 

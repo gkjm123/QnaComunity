@@ -1,6 +1,7 @@
 package com.example.qnacomunity.entity;
 
 import com.example.qnacomunity.type.Role;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -14,6 +15,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
@@ -21,6 +24,8 @@ import org.hibernate.annotations.CreationTimestamp;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE member SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 public class Member {
 
   @Id
