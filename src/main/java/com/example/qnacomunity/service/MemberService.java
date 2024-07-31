@@ -46,7 +46,7 @@ public class MemberService {
     }
 
     //아이디 중복 확인
-    if (memberRepository.findByLoginIdAndDeletedAtIsNull(form.getLoginId()).isPresent()) {
+    if (memberRepository.findByLoginId(form.getLoginId()).isPresent()) {
       throw new CustomException(ErrorCode.ID_EXIST);
     }
 
@@ -63,7 +63,7 @@ public class MemberService {
   public String signIn(SignInform form) {
 
     //해당 ID의 멤버 존재 여부 확인
-    Member member = memberRepository.findByLoginIdAndDeletedAtIsNull(form.getLoginId())
+    Member member = memberRepository.findByLoginId(form.getLoginId())
         .orElseThrow(() -> new CustomException(ErrorCode.LOGIN_FAIL));
 
     //비밀번호 일치 확인
@@ -128,12 +128,8 @@ public class MemberService {
   @Transactional
   public void delete(MemberResponse memberResponse) {
 
-    Member member = getMember(memberResponse);
+    memberRepository.deleteById(memberResponse.getId());
 
-    //deleted_at 현재 시각으로 설정
-    member.setDeletedAt(LocalDateTime.now());
-
-    memberRepository.save(member);
   }
 
   public Member getNewMember(String loginId, String nickName, String email, String password) {

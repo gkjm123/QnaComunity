@@ -39,7 +39,7 @@ public class Oauth2UserService extends DefaultOAuth2UserService {
     String nickName = oauth2UserInfo.getName();
     String email = oauth2UserInfo.getEmail();
 
-    Optional<Member> optionalMember = memberRepository.findByLoginIdAndDeletedAtIsNull(loginId);
+    Optional<Member> optionalMember = memberRepository.findByLoginId(loginId);
 
     //회원 DB 에 정보가 없다면 회원 가입 진행
     if (optionalMember.isEmpty()) {

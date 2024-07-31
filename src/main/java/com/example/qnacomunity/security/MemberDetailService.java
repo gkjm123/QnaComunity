@@ -17,7 +17,7 @@ public class MemberDetailService implements UserDetailsService {
 
   @Override
   public CustomUserDetail loadUserByUsername(String loginId) {
-    Member member = memberRepository.findByLoginIdAndDeletedAtIsNull(loginId)
+    Member member = memberRepository.findByLoginId(loginId)
         .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
 
     return new MemberDetail(MemberResponse.from(member));
