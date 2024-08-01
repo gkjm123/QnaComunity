@@ -1,5 +1,6 @@
 package com.example.qnacomunity.service;
 
+import com.example.qnacomunity.aop.AopService;
 import com.example.qnacomunity.dto.form.AnswerForm;
 import com.example.qnacomunity.dto.form.QuestionForm;
 import com.example.qnacomunity.dto.response.AnswerResponse;
@@ -11,14 +12,10 @@ import com.example.qnacomunity.entity.Question;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.AnswerRepository;
-import com.example.qnacomunity.repository.MemberRepository;
 import com.example.qnacomunity.repository.QuestionRepository;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,8 +27,8 @@ public class QnaService {
 
   private final QuestionRepository questionRepository;
   private final AnswerRepository answerRepository;
-  private final RedissonClient redissonClient;
   private final MemberService memberService;
+  private final AopService aopService;
 
   @Transactional
   public QuestionResponse createQuestion(MemberResponse memberResponse, QuestionForm form) {
@@ -55,31 +52,9 @@ public class QnaService {
         .orElseThrow(() -> new CustomException(ErrorCode.Q_NOT_FOUND));
 
     //조회수 증가
-    increaseHits(question);
+    aopService.increaseHits(question);
 
     return QuestionResponse.from(question);
-  }
-
-  //redis lock 을 이용해 조회수 증가
-  private void increaseHits(Question question) {
-
-    RLock lock = redissonClient.getLock(question.getId().toString());
-
-    try {
-      boolean acquireLock = lock.tryLock(3, 1, TimeUnit.SECONDS);
-
-      if (!acquireLock) {
-        throw new CustomException(ErrorCode.ACQUIRE_LOCK_FAIL);
-      }
-
-      question.setHits(question.getHits() + 1);
-
-    } catch (Exception e) {
-      throw new CustomException(ErrorCode.ACQUIRE_LOCK_FAIL);
-
-    } finally {
-      lock.unlock();
-    }
   }
 
   @Transactional(readOnly = true)
