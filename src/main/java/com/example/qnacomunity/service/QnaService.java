@@ -15,7 +15,10 @@ import com.example.qnacomunity.repository.MemberRepository;
 import com.example.qnacomunity.repository.QuestionRepository;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,12 +30,13 @@ public class QnaService {
 
   private final QuestionRepository questionRepository;
   private final AnswerRepository answerRepository;
-  private final MemberRepository memberRepository;
+  private final RedissonClient redissonClient;
+  private final MemberService memberService;
 
   @Transactional
   public QuestionResponse createQuestion(MemberResponse memberResponse, QuestionForm form) {
 
-    Member member = getMember(memberResponse);
+    Member member = memberService.getMember(memberResponse);
 
     Question question = Question.builder()
         .member(member)
@@ -50,10 +54,32 @@ public class QnaService {
     Question question = questionRepository.findById(questionId)
         .orElseThrow(() -> new CustomException(ErrorCode.Q_NOT_FOUND));
 
-    //질문 조회수 1 증가
-    question.setHits(question.getHits() + 1);
+    //조회수 증가
+    increaseHits(question);
 
     return QuestionResponse.from(question);
+  }
+
+  //redis lock 을 이용해 조회수 증가
+  private void increaseHits(Question question) {
+
+    RLock lock = redissonClient.getLock(question.getId().toString());
+
+    try {
+      boolean acquireLock = lock.tryLock(3, 1, TimeUnit.SECONDS);
+
+      if (!acquireLock) {
+        throw new CustomException(ErrorCode.ACQUIRE_LOCK_FAIL);
+      }
+
+      question.setHits(question.getHits() + 1);
+
+    } catch (Exception e) {
+      throw new CustomException(ErrorCode.ACQUIRE_LOCK_FAIL);
+
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Transactional(readOnly = true)
@@ -90,11 +116,8 @@ public class QnaService {
       throw new CustomException(ErrorCode.Q_MEMBER_NOT_MATCH);
     }
 
-    //질문에 답변이 달려있는지
-    boolean isQuestionAnswered = answerRepository.existsByQuestion_Id(questionId);
-
     //질문 달린 답변은 수정 불가
-    if (isQuestionAnswered) {
+    if (answerRepository.existsByQuestion_Id(questionId)) {
       throw new CustomException(ErrorCode.Q_ANSWERED);
     }
 
@@ -116,11 +139,8 @@ public class QnaService {
       throw new CustomException(ErrorCode.Q_MEMBER_NOT_MATCH);
     }
 
-    //질문에 답변이 달려있는지
-    boolean isQuestionAnswered = answerRepository.existsByQuestion_Id(questionId);
-
     //질문 달린 답변은 삭제 불가
-    if (isQuestionAnswered) {
+    if (answerRepository.existsByQuestion_Id(questionId)) {
       throw new CustomException(ErrorCode.Q_ANSWERED);
     }
 
@@ -130,7 +150,7 @@ public class QnaService {
   @Transactional
   public AnswerResponse createAnswer(MemberResponse memberResponse, AnswerForm form) {
 
-    Member member = getMember(memberResponse);
+    Member member = memberService.getMember(memberResponse);
 
     Question question = questionRepository.findById(form.getQuestionId())
         .orElseThrow(() -> new CustomException(ErrorCode.Q_NOT_FOUND));
@@ -225,7 +245,7 @@ public class QnaService {
   @Transactional
   public void pickAnswer(MemberResponse memberResponse, Long answerId) {
 
-    Member member = getMember(memberResponse);
+    Member member = memberService.getMember(memberResponse);
 
     Answer answer = answerRepository.findById(answerId)
         .orElseThrow(() -> new CustomException(ErrorCode.A_NOT_FOUND));
@@ -237,22 +257,12 @@ public class QnaService {
       throw new CustomException(ErrorCode.Q_MEMBER_NOT_MATCH);
     }
 
-    //질문에 채택된 답변이 있는지
-    boolean isQuestionPicked = answerRepository
-        .existsByQuestion_IdAndPickedAtIsNotNull(question.getId());
-
-    //채택된 질문 있으면 다시 채택 불가
-    if (isQuestionPicked) {
+    //질문에 채택된 답변이 있으면 다시 채택 불가
+    if (answerRepository.existsByQuestion_IdAndPickedAtIsNotNull(question.getId())) {
       throw new CustomException(ErrorCode.Q_PICKED);
     }
 
     //채택된 답변에 채택 시간(picked_at) 세팅
     answer.setPickedAt(LocalDateTime.now());
-  }
-
-  public Member getMember(MemberResponse memberResponse) {
-
-    return memberRepository.findById(memberResponse.getId())
-        .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
   }
 }

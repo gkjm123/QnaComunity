@@ -7,6 +7,7 @@ import com.example.qnacomunity.dto.response.QuestionResponse;
 import com.example.qnacomunity.security.CustomUserDetail;
 import com.example.qnacomunity.service.QnaService;
 import jakarta.validation.Valid;
+import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,11 +17,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,8 +40,8 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.createQuestion(userDetail.getMemberResponse(), form));
   }
 
-  @GetMapping("/question")
-  public ResponseEntity<QuestionResponse> getQuestion(@RequestParam Long questionId) {
+  @GetMapping("/question/{questionId}")
+  public ResponseEntity<QuestionResponse> getQuestion(@PathVariable Long questionId) {
 
     return ResponseEntity.ok(qnaService.getQuestion(questionId));
   }
@@ -62,9 +63,10 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.getMyQuestions(userDetail.getMemberResponse(), pageable));
   }
 
-  @PutMapping("/question")
-  public ResponseEntity<?> updateQuestion(@AuthenticationPrincipal CustomUserDetail userDetail,
-      @RequestParam Long questionId,
+  @PutMapping("/question/{questionId}")
+  public ResponseEntity<QuestionResponse> updateQuestion(
+      @AuthenticationPrincipal CustomUserDetail userDetail,
+      @PathVariable Long questionId,
       @Valid @RequestBody QuestionForm form
   ) {
 
@@ -72,10 +74,10 @@ public class QnaController {
         qnaService.updateQuestion(userDetail.getMemberResponse(), questionId, form));
   }
 
-  @DeleteMapping("/question")
+  @DeleteMapping("/question/{questionId}")
   public ResponseEntity<String> deleteQuestion(
       @AuthenticationPrincipal CustomUserDetail userDetail,
-      @RequestParam Long questionId
+      @PathVariable Long questionId
   ) {
 
     qnaService.deleteQuestion(userDetail.getMemberResponse(), questionId);
@@ -91,15 +93,15 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.createAnswer(userDetail.getMemberResponse(), form));
   }
 
-  @GetMapping("/answer")
-  public ResponseEntity<AnswerResponse> getAnswer(@RequestParam Long answerId) {
+  @GetMapping("/answer/{answerId}")
+  public ResponseEntity<AnswerResponse> getAnswer(@PathVariable Long answerId) {
 
     return ResponseEntity.ok(qnaService.getAnswer(answerId));
   }
 
-  @GetMapping("/answers")
+  @GetMapping("/answers/{questionId}")
   public ResponseEntity<Page<AnswerResponse>> getAnswers(
-      @RequestParam Long questionId,
+      @PathVariable Long questionId,
       @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
   ) {
 
@@ -115,10 +117,10 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.getMyAnswers(userDetail.getMemberResponse(), pageable));
   }
 
-  @PutMapping("/answer")
-  public ResponseEntity<?> updateAnswer(
+  @PutMapping("/answer/{answerId}")
+  public ResponseEntity<AnswerResponse> updateAnswer(
       @AuthenticationPrincipal CustomUserDetail userDetail,
-      @RequestParam Long answerId,
+      @PathVariable Long answerId,
       @Valid @RequestBody AnswerForm form
   ) {
 
@@ -126,20 +128,20 @@ public class QnaController {
         qnaService.updateAnswer(userDetail.getMemberResponse(), answerId, form));
   }
 
-  @DeleteMapping("/answer")
+  @DeleteMapping("/answer/{answerId}")
   public ResponseEntity<String> deleteAnswer(
       @AuthenticationPrincipal CustomUserDetail userDetail,
-      @RequestParam Long answerId
+      @PathVariable Long answerId
   ) {
 
     qnaService.deleteAnswer(userDetail.getMemberResponse(), answerId);
     return ResponseEntity.ok("삭제 완료");
   }
 
-  @PutMapping("/picked-answer")
+  @PutMapping("/picked-answer/{answerId}")
   public ResponseEntity<String> pickAnswer(
       @AuthenticationPrincipal CustomUserDetail userDetail,
-      @RequestParam Long answerId
+      @PathVariable Long answerId
   ) {
 
     qnaService.pickAnswer(userDetail.getMemberResponse(), answerId);
