@@ -1,6 +1,5 @@
 package com.example.qnacomunity.aop;
 
-import com.example.qnacomunity.entity.Question;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import java.util.concurrent.TimeUnit;

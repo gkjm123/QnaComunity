@@ -5,7 +5,6 @@ import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 @Service
