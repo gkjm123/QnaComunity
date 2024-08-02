@@ -7,7 +7,6 @@ import com.example.qnacomunity.dto.response.QuestionResponse;
 import com.example.qnacomunity.security.CustomUserDetail;
 import com.example.qnacomunity.service.QnaService;
 import jakarta.validation.Valid;
-import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

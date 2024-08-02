@@ -1,6 +1,6 @@
 package com.example.qnacomunity.service;
 
-import com.example.qnacomunity.aop.AopService;
+import com.example.qnacomunity.aop.QuestionHitService;
 import com.example.qnacomunity.dto.form.AnswerForm;
 import com.example.qnacomunity.dto.form.QuestionForm;
 import com.example.qnacomunity.dto.response.AnswerResponse;
@@ -28,7 +28,7 @@ public class QnaService {
   private final QuestionRepository questionRepository;
   private final AnswerRepository answerRepository;
   private final MemberService memberService;
-  private final AopService aopService;
+  private final QuestionHitService questionHitService;
 
   @Transactional
   public QuestionResponse createQuestion(MemberResponse memberResponse, QuestionForm form) {
@@ -45,14 +45,10 @@ public class QnaService {
     return QuestionResponse.from(questionRepository.save(question));
   }
 
-  @Transactional
   public QuestionResponse getQuestion(Long questionId) {
 
-    Question question = questionRepository.findById(questionId)
-        .orElseThrow(() -> new CustomException(ErrorCode.Q_NOT_FOUND));
-
     //조회수 증가
-    aopService.increaseHits(question);
+    Question question = questionHitService.increaseHits(questionId);
 
     return QuestionResponse.from(question);
   }

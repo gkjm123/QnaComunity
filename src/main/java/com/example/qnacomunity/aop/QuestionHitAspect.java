@@ -16,17 +16,17 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class AopAspect {
+public class QuestionHitAspect {
 
   private final RedissonClient redissonClient;
 
-  @Around("@annotation(com.example.qnacomunity.aop.HitsLock) && args(question)")
-  public Object hitsLock(ProceedingJoinPoint pjp, Question question) throws Throwable {
+  @Around("@annotation(com.example.qnacomunity.aop.HitsLock) && args(questionId)")
+  public Object hitsLock(ProceedingJoinPoint pjp, Long questionId) throws Throwable {
 
-    RLock lock = redissonClient.getLock(question.getId().toString());
+    RLock lock = redissonClient.getLock(questionId.toString());
 
     try {
-      boolean acquireLock = lock.tryLock(3, 1, TimeUnit.SECONDS);
+      boolean acquireLock = lock.tryLock(30, 30, TimeUnit.SECONDS);
 
       if (!acquireLock) {
         throw new CustomException(ErrorCode.ACQUIRE_LOCK_FAIL);

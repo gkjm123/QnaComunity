@@ -14,7 +14,6 @@ import com.example.qnacomunity.repository.MemberRepository;
 import com.example.qnacomunity.security.JwtProvider;
 import com.example.qnacomunity.type.Role;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
