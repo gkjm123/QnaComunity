@@ -6,14 +6,15 @@ import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class QuestionHitService {
   private final QuestionRepository questionRepository;
 
-  @HitsLock
-  public Question increaseHits(Long questionId) {
+  @Transactional
+  public Question increase(Long questionId) {
 
     Question question = questionRepository.findById(questionId)
         .orElseThrow(() -> new CustomException(ErrorCode.Q_NOT_FOUND));
