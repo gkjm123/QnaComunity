@@ -2,7 +2,6 @@ package com.example.qnacomunity.service;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.example.qnacomunity.aop.LockService;
 import com.example.qnacomunity.aop.MemberScoreService;
 import com.example.qnacomunity.dto.form.MemberForm.PasswordChangeForm;
 import com.example.qnacomunity.dto.form.MemberForm.SignInform;
@@ -15,6 +14,7 @@ import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.MemberRepository;
 import com.example.qnacomunity.security.JwtProvider;
 import com.example.qnacomunity.type.Role;
+import com.example.qnacomunity.type.ScoreChangeType;
 import com.example.qnacomunity.type.ScoreDescription;
 import java.io.IOException;
 import java.util.Objects;
@@ -35,13 +35,12 @@ public class MemberService {
   private final BCryptPasswordEncoder bCryptPasswordEncoder;
   private final JwtProvider jwtProvider;
   private final AmazonS3 amazonS3;
-  private final LockService lockService;
 
   private static final int START_SCORE = 50;
+  private final MemberScoreService memberScoreService;
 
   @Value("${cloud.aws.s3.bucket}")
   private String bucket;
-
 
   public MemberResponse signUp(SignUpForm form) {
 
@@ -62,8 +61,9 @@ public class MemberService {
         );
 
     //시작 스코어(50점) 제공
-    member = lockService.changeScore(
+    member = memberScoreService.change(
         member.getId(),
+        ScoreChangeType.PLUS,
         START_SCORE,
         ScoreDescription.JOIN,
         null //연관 질문 없음

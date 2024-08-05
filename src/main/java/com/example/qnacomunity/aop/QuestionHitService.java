@@ -11,8 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class QuestionHitService {
+
   private final QuestionRepository questionRepository;
 
+  @AopLock(key = "#questionId", type = "question-hit")
   @Transactional
   public Question increase(Long questionId) {
 

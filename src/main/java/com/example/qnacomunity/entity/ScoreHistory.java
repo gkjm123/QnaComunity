@@ -1,5 +1,6 @@
 package com.example.qnacomunity.entity;
 
+import com.example.qnacomunity.type.ScoreChangeType;
 import com.example.qnacomunity.type.ScoreDescription;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -30,6 +31,9 @@ public class ScoreHistory {
 
   @ManyToOne(fetch = FetchType.LAZY)
   private Member member;
+
+  @Enumerated(EnumType.STRING)
+  private ScoreChangeType type;
 
   private int score;
   private int previous;

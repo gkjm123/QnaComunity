@@ -1,6 +1,7 @@
 package com.example.qnacomunity.service;
 
-import com.example.qnacomunity.aop.LockService;
+import com.example.qnacomunity.aop.MemberScoreService;
+import com.example.qnacomunity.aop.QuestionHitService;
 import com.example.qnacomunity.dto.form.AnswerForm;
 import com.example.qnacomunity.dto.form.QuestionForm;
 import com.example.qnacomunity.dto.response.AnswerResponse;
@@ -13,6 +14,7 @@ import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.AnswerRepository;
 import com.example.qnacomunity.repository.QuestionRepository;
+import com.example.qnacomunity.type.ScoreChangeType;
 import com.example.qnacomunity.type.ScoreDescription;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -29,9 +31,10 @@ public class QnaService {
   private final QuestionRepository questionRepository;
   private final AnswerRepository answerRepository;
   private final MemberService memberService;
-  private final LockService lockService;
 
   private static final int PAYBACK_SCORE = 5;
+  private final MemberScoreService memberScoreService;
+  private final QuestionHitService questionHitService;
 
 
   public QuestionResponse createQuestion(MemberResponse memberResponse, QuestionForm form) {
@@ -50,9 +53,10 @@ public class QnaService {
     );
 
     //보상 스코어 만큼 질문자에게 차감
-    Member member = lockService.changeScore(
+    Member member = memberScoreService.change(
         memberResponse.getId(), //질문자 ID
-        -form.getReward(),  //변경 스코어
+        ScoreChangeType.MINUS,
+        form.getReward(),  //변경 스코어
         ScoreDescription.QUESTION_MADE, //변경 사유
         question //연관 질문(null 가능)
     );
@@ -66,7 +70,7 @@ public class QnaService {
   public QuestionResponse getQuestion(Long questionId) {
 
     //조회수 증가
-    Question question = lockService.increaseHits(questionId);
+    Question question = questionHitService.increase(questionId);
 
     return QuestionResponse.from(question);
   }
@@ -115,12 +119,15 @@ public class QnaService {
     }
 
     //변경된 보상 스코어 만큼 멤버에게 스코어 증감 또는 차감
-    lockService.changeScore(
-        memberResponse.getId(),
-        question.getReward() - form.getReward(),
-        ScoreDescription.QUESTION_CHANGE,
-        question
-    );
+    if (question.getReward() != form.getReward()) {
+      memberScoreService.change(
+          memberResponse.getId(),
+          question.getReward() - form.getReward() > 0 ? ScoreChangeType.PLUS : ScoreChangeType.MINUS,
+          Math.abs(question.getReward() - form.getReward()),
+          ScoreDescription.QUESTION_CHANGE,
+          question
+      );
+    }
 
     question.setTitle(form.getTitle());
     question.setContent(form.getContent());
@@ -145,8 +152,9 @@ public class QnaService {
     }
 
     //질문자에게 보상 스코어 반환
-    lockService.changeScore(
+    memberScoreService.change(
         memberResponse.getId(),
+        ScoreChangeType.PLUS,
         question.getReward(),
         ScoreDescription.QUESTION_DELETE,
         question
@@ -268,16 +276,18 @@ public class QnaService {
     }
 
     //질문자에게 채택 페이백 스코어(5점) 제공
-    lockService.changeScore(
+    memberScoreService.change(
         memberResponse.getId(),
+        ScoreChangeType.PLUS,
         PAYBACK_SCORE,
         ScoreDescription.PICK_PAYBACK,
         question
     );
 
     //답변자에게 보상 스코어 제공
-    lockService.changeScore(
+    memberScoreService.change(
         answer.getMember().getId(),
+        ScoreChangeType.PLUS,
         question.getReward(),
         ScoreDescription.ANSWER_PICKED,
         question

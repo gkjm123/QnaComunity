@@ -1,8 +1,11 @@
 package com.example.qnacomunity.dto.response;
 
+import com.example.qnacomunity.entity.Question;
 import com.example.qnacomunity.entity.ScoreHistory;
+import com.example.qnacomunity.type.ScoreChangeType;
 import com.example.qnacomunity.type.ScoreDescription;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,6 +22,7 @@ public class ScoreHistoryResponse {
   private Long id;
   private Long memberId;
   private String memberNickName;
+  private ScoreChangeType type;
   private int score;
   private int previous;
   private int remain;
@@ -32,14 +36,15 @@ public class ScoreHistoryResponse {
         .id(scoreHistory.getId())
         .memberId(scoreHistory.getMember().getId())
         .memberNickName(scoreHistory.getMember().getNickName())
+        .type(scoreHistory.getType())
         .score(scoreHistory.getScore())
         .previous(scoreHistory.getPrevious())
         .remain(scoreHistory.getRemain())
         .description(scoreHistory.getDescription())
-        .questionId(scoreHistory.getRelatedQuestion() == null ?
-            null : scoreHistory.getRelatedQuestion().getId())
-        .questionTitle(scoreHistory.getRelatedQuestion() == null ?
-            null : scoreHistory.getRelatedQuestion().getTitle())
+        .questionId(Optional.ofNullable(scoreHistory.getRelatedQuestion())
+            .map(Question::getId).orElse(null))
+        .questionTitle(Optional.ofNullable(scoreHistory.getRelatedQuestion())
+            .map(Question::getTitle).orElse(null))
         .createdAt(scoreHistory.getCreatedAt())
         .build();
   }
