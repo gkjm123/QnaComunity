@@ -1,6 +1,6 @@
 package com.example.qnacomunity.service;
 
-import com.example.qnacomunity.aop.QuestionHitService;
+import com.example.qnacomunity.aop.LockService;
 import com.example.qnacomunity.dto.form.AnswerForm;
 import com.example.qnacomunity.dto.form.QuestionForm;
 import com.example.qnacomunity.dto.response.AnswerResponse;
@@ -13,6 +13,7 @@ import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.AnswerRepository;
 import com.example.qnacomunity.repository.QuestionRepository;
+import com.example.qnacomunity.type.ScoreDescription;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -28,19 +29,36 @@ public class QnaService {
   private final QuestionRepository questionRepository;
   private final AnswerRepository answerRepository;
   private final MemberService memberService;
-  private final QuestionHitService questionHitService;
+  private final LockService lockService;
 
-  @Transactional
+  private static final int PAYBACK_SCORE = 5;
+
+
   public QuestionResponse createQuestion(MemberResponse memberResponse, QuestionForm form) {
 
-    Member member = memberService.getMember(memberResponse);
+    //질문자가 보상 스코어 보다 많이 가지고 있는지 체크
+    if (memberResponse.getScore() < form.getReward()) {
+      throw new CustomException(ErrorCode.SCORE_NOT_ENOUGH);
+    }
 
-    Question question = Question.builder()
-        .member(member)
-        .title(form.getTitle())
-        .content(form.getContent())
-        .reward(form.getReward())
-        .build();
+    Question question = questionRepository.save(
+        Question.builder()
+            .title(form.getTitle())
+            .content(form.getContent())
+            .reward(form.getReward())
+            .build()
+    );
+
+    //보상 스코어 만큼 질문자에게 차감
+    Member member = lockService.changeScore(
+        memberResponse.getId(), //질문자 ID
+        -form.getReward(),  //변경 스코어
+        ScoreDescription.QUESTION_MADE, //변경 사유
+        question //연관 질문(null 가능)
+    );
+
+    //질문에 멤버 세팅
+    question.setMember(member);
 
     return QuestionResponse.from(questionRepository.save(question));
   }
@@ -48,7 +66,7 @@ public class QnaService {
   public QuestionResponse getQuestion(Long questionId) {
 
     //조회수 증가
-    Question question = questionHitService.increaseHits(questionId);
+    Question question = lockService.increaseHits(questionId);
 
     return QuestionResponse.from(question);
   }
@@ -72,7 +90,6 @@ public class QnaService {
     return questions.map(QuestionResponse::from);
   }
 
-  @Transactional
   public QuestionResponse updateQuestion(
       MemberResponse memberResponse,
       Long questionId,
@@ -92,6 +109,19 @@ public class QnaService {
       throw new CustomException(ErrorCode.Q_ANSWERED);
     }
 
+    //질문자가 추가할 보상 스코어 보다 많이 가지고 있는지 체크
+    if (memberResponse.getScore() < form.getReward() - question.getReward()) {
+      throw new CustomException(ErrorCode.SCORE_NOT_ENOUGH);
+    }
+
+    //변경된 보상 스코어 만큼 멤버에게 스코어 증감 또는 차감
+    lockService.changeScore(
+        memberResponse.getId(),
+        question.getReward() - form.getReward(),
+        ScoreDescription.QUESTION_CHANGE,
+        question
+    );
+
     question.setTitle(form.getTitle());
     question.setContent(form.getContent());
     question.setReward(form.getReward());
@@ -99,7 +129,6 @@ public class QnaService {
     return QuestionResponse.from(questionRepository.save(question));
   }
 
-  @Transactional
   public void deleteQuestion(MemberResponse memberResponse, Long questionId) {
 
     Question question = questionRepository.findById(questionId)
@@ -114,6 +143,14 @@ public class QnaService {
     if (answerRepository.existsByQuestion_Id(questionId)) {
       throw new CustomException(ErrorCode.Q_ANSWERED);
     }
+
+    //질문자에게 보상 스코어 반환
+    lockService.changeScore(
+        memberResponse.getId(),
+        question.getReward(),
+        ScoreDescription.QUESTION_DELETE,
+        question
+    );
 
     questionRepository.deleteById(questionId);
   }
@@ -213,10 +250,7 @@ public class QnaService {
     answerRepository.deleteById(answerId);
   }
 
-  @Transactional
   public void pickAnswer(MemberResponse memberResponse, Long answerId) {
-
-    Member member = memberService.getMember(memberResponse);
 
     Answer answer = answerRepository.findById(answerId)
         .orElseThrow(() -> new CustomException(ErrorCode.A_NOT_FOUND));
@@ -224,7 +258,7 @@ public class QnaService {
     Question question = answer.getQuestion();
 
     //질문자 본인 체크
-    if (!Objects.equals(question.getMember().getId(), member.getId())) {
+    if (!Objects.equals(question.getMember().getId(), memberResponse.getId())) {
       throw new CustomException(ErrorCode.Q_MEMBER_NOT_MATCH);
     }
 
@@ -232,6 +266,22 @@ public class QnaService {
     if (answerRepository.existsByQuestion_IdAndPickedAtIsNotNull(question.getId())) {
       throw new CustomException(ErrorCode.Q_PICKED);
     }
+
+    //질문자에게 채택 페이백 스코어(5점) 제공
+    lockService.changeScore(
+        memberResponse.getId(),
+        PAYBACK_SCORE,
+        ScoreDescription.PICK_PAYBACK,
+        question
+    );
+
+    //답변자에게 보상 스코어 제공
+    lockService.changeScore(
+        answer.getMember().getId(),
+        question.getReward(),
+        ScoreDescription.ANSWER_PICKED,
+        question
+    );
 
     //채택된 답변에 채택 시간(picked_at) 세팅
     answer.setPickedAt(LocalDateTime.now());

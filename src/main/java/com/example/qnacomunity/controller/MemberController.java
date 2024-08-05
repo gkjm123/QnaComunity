@@ -2,6 +2,8 @@ package com.example.qnacomunity.controller;
 
 import com.example.qnacomunity.dto.form.MemberForm;
 import com.example.qnacomunity.dto.response.MemberResponse;
+import com.example.qnacomunity.dto.response.ScoreHistoryResponse;
+import com.example.qnacomunity.repository.ScoreHistoryRepository;
 import com.example.qnacomunity.security.CustomUserDetail;
 import com.example.qnacomunity.service.MemberService;
 import com.example.qnacomunity.type.Role;
@@ -9,6 +11,10 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class MemberController {
 
   private final MemberService memberService;
+  private final ScoreHistoryRepository scoreHistoryRepository;
 
   //회원 가입
   @PostMapping("/registration")
@@ -105,5 +112,18 @@ public class MemberController {
   public ResponseEntity<String> delete(@AuthenticationPrincipal CustomUserDetail userDetail) {
     memberService.delete(userDetail.getMemberResponse());
     return ResponseEntity.ok("회원 탈퇴 완료");
+  }
+
+  //스코어 히스토리 확인
+  @GetMapping("/score-histories")
+  public ResponseEntity<Page<ScoreHistoryResponse>> getScoreHistories(
+      @AuthenticationPrincipal CustomUserDetail userDetail,
+      @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+  ) {
+
+    return ResponseEntity.ok(
+        scoreHistoryRepository.findAllByMember_Id(userDetail.getMemberResponse().getId(), pageable)
+            .map(ScoreHistoryResponse::from)
+    );
   }
 }
