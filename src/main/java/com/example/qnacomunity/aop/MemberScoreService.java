@@ -7,6 +7,7 @@ import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.MemberRepository;
 import com.example.qnacomunity.repository.ScoreHistoryRepository;
+import com.example.qnacomunity.type.ScoreChangeType;
 import com.example.qnacomunity.type.ScoreDescription;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,9 +20,15 @@ public class MemberScoreService {
   private final MemberRepository memberRepository;
   private final ScoreHistoryRepository scoreHistoryRepository;
 
-  //락 획득 후 진행
+  @AopLock(key = "#memberId", type = "member-score")
   @Transactional
-  public Member change(Long memberId, int score, ScoreDescription description, Question relatedQuestion) {
+  public Member change(
+      Long memberId,
+      ScoreChangeType type,
+      int score,
+      ScoreDescription description,
+      Question relatedQuestion
+  ) {
 
     Member member =  memberRepository.findById(memberId)
         .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -30,7 +37,7 @@ public class MemberScoreService {
     int previous = member.getScore();
 
     //변경 후 스코어
-    int remain = member.getScore() + score;
+    int remain = (type == ScoreChangeType.PLUS) ? previous + score : previous - score;
 
     //멤버의 스코어 변경
     member.setScore(remain);
@@ -39,6 +46,7 @@ public class MemberScoreService {
     //스코어 히스토리에 기록
     scoreHistoryRepository.save(ScoreHistory.builder()
         .member(member)
+        .type(type)
         .score(score)
         .previous(previous)
         .remain(remain)

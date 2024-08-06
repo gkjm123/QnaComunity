@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-public @interface HitsLock {
-
+public @interface AopLock {
+  String key();
+  String type();
 }
