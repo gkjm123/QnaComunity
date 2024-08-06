@@ -2,6 +2,7 @@ package com.example.qnacomunity.dto.response;
 
 import com.example.qnacomunity.entity.Question;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +21,7 @@ public class QuestionResponse {
   private String title;
   private String content;
   private int reward;
-  private String keywords;
+  private List<String> keywords;
   private int hits;
   private LocalDateTime createdAt;
 
