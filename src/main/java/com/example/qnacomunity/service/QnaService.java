@@ -16,7 +16,9 @@ import com.example.qnacomunity.repository.AnswerRepository;
 import com.example.qnacomunity.repository.QuestionRepository;
 import com.example.qnacomunity.type.ScoreChangeType;
 import com.example.qnacomunity.type.ScoreDescription;
+import com.example.qnacomunity.util.KeywordUtil;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,11 +33,10 @@ public class QnaService {
   private final QuestionRepository questionRepository;
   private final AnswerRepository answerRepository;
   private final MemberService memberService;
-
-  private static final int PAYBACK_SCORE = 5;
   private final MemberScoreService memberScoreService;
   private final QuestionHitService questionHitService;
 
+  private static final int PAYBACK_SCORE = 5;
 
   public QuestionResponse createQuestion(MemberResponse memberResponse, QuestionForm form) {
 
@@ -63,6 +64,10 @@ public class QnaService {
 
     //질문에 멤버 세팅
     question.setMember(member);
+
+    //질문에 키워드 세팅
+    List<String> keywords = KeywordUtil.getKeywords(form);
+    question.setKeywords(keywords);
 
     return QuestionResponse.from(questionRepository.save(question));
   }
@@ -132,6 +137,10 @@ public class QnaService {
     question.setTitle(form.getTitle());
     question.setContent(form.getContent());
     question.setReward(form.getReward());
+
+    //질문에 키워드 세팅
+    List<String> keywords = KeywordUtil.getKeywords(form);
+    question.setKeywords(keywords);
 
     return QuestionResponse.from(questionRepository.save(question));
   }

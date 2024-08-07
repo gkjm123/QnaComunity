@@ -1,5 +1,8 @@
 package com.example.qnacomunity.entity;
 
+import com.example.qnacomunity.util.KeywordConverter;
+import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,7 +40,10 @@ public class Question {
   private String title;
   private String content;
   private int reward;
-  private String keywords;
+
+  @Convert(converter = KeywordConverter.class)
+  private List<String> keywords;
+
   private int hits;
 
   @CreationTimestamp
