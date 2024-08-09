@@ -24,11 +24,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QnaService {
@@ -79,6 +81,8 @@ public class QnaService {
       elasticSearchService.save(question);
 
     } catch (Exception e) {
+      log.error("ES 연동 실패: {}", e.getMessage());
+
       failureRepository.save(
           Failure.builder()
             .question(question)
@@ -164,6 +168,8 @@ public class QnaService {
       elasticSearchService.save(question);
 
     } catch (Exception e) {
+      log.error("ES 연동 실패: {}", e.getMessage());
+
       failureRepository.save(
           Failure.builder()
               .question(question)
@@ -203,6 +209,8 @@ public class QnaService {
       elasticSearchService.delete(questionId);
 
     } catch (Exception e) {
+      log.error("ES 연동 실패: {}", e.getMessage());
+
       failureRepository.save(
           Failure.builder()
               .question(question)

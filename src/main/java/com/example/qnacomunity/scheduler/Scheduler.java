@@ -5,9 +5,11 @@ import com.example.qnacomunity.entity.Failure;
 import com.example.qnacomunity.entity.Question;
 import com.example.qnacomunity.repository.FailureRepository;
 import com.example.qnacomunity.type.FailureType;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,31 +26,42 @@ public class Scheduler {
   @Scheduled(cron = "${spring.scheduler.time}")
   @Transactional
   public void failurePatch() {
-    List<Failure> failures = failureRepository.findAll();
 
-    for (Failure failure : failures) {
+    long totalFailure = failureRepository.count();
+    long totalPage = (long) Math.ceil(totalFailure / 10.0);
 
-      Question question = failure.getQuestion();
+    List<Failure> success = new ArrayList<>();
 
-      if (failure.getFailureType() == FailureType.SAVE_FAIL) {
+    for (int i = 0; i < totalPage; i++) {
+
+      PageRequest pageRequest = PageRequest.of(i, 10);
+      List<Failure> failures = failureRepository.findAllBy(pageRequest);
+
+      for (Failure failure : failures) {
+
         try {
-          elasticSearchService.save(question);
-          failureRepository.delete(failure);
-          log.info("ES 저장 성공");
+          Question question = failure.getQuestion();
+
+          if (failure.getFailureType() == FailureType.SAVE_FAIL) {
+            elasticSearchService.save(question);
+            success.add(failure);
+            log.info("question {}: ES 저장 성공", question.getId());
+          }
+
+          else {
+            elasticSearchService.delete(question.getId());
+            success.add(failure);
+            log.info("question {}: ES 삭제 성공", question.getId());
+          }
+
         } catch (Exception e) {
-          log.error(e.getMessage());
+          log.error("ES 업데이트 실패: {}", e.getMessage());
         }
       }
+    }
 
-      else if (failure.getFailureType() == FailureType.DELETE_FAIL) {
-        try {
-          elasticSearchService.delete(question.getId());
-          failureRepository.delete(failure);
-          log.info("ES 삭제 성공");
-        } catch (Exception e) {
-          log.error(e.getMessage());
-        }
-      }
+    if (!success.isEmpty()) {
+      failureRepository.deleteAll(success);
     }
   }
 }

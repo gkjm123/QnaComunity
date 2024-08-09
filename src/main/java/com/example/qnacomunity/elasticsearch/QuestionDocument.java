@@ -1,6 +1,7 @@
 package com.example.qnacomunity.elasticsearch;
 
 import com.example.qnacomunity.entity.Question;
+import java.sql.Timestamp;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +27,8 @@ public class QuestionDocument {
 
   private String keywords;
 
+  private long created;
+
   public static QuestionDocument from(Question question) {
 
     return QuestionDocument.builder()
@@ -33,6 +36,7 @@ public class QuestionDocument {
         .title(question.getTitle())
         .content(question.getContent())
         .keywords(String.join(" ", question.getKeywords()))
+        .created(Timestamp.valueOf(question.getCreatedAt()).getTime())
         .build();
   }
 }
