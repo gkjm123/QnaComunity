@@ -8,12 +8,15 @@ import com.example.qnacomunity.dto.response.AnswerResponse;
 import com.example.qnacomunity.dto.response.MemberResponse;
 import com.example.qnacomunity.dto.response.QuestionResponse;
 import com.example.qnacomunity.entity.Answer;
+import com.example.qnacomunity.entity.Failure;
 import com.example.qnacomunity.entity.Member;
 import com.example.qnacomunity.entity.Question;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.AnswerRepository;
+import com.example.qnacomunity.repository.FailureRepository;
 import com.example.qnacomunity.repository.QuestionRepository;
+import com.example.qnacomunity.type.FailureType;
 import com.example.qnacomunity.type.ScoreChangeType;
 import com.example.qnacomunity.type.ScoreDescription;
 import com.example.qnacomunity.util.KeywordUtil;
@@ -35,8 +38,10 @@ public class QnaService {
   private final MemberService memberService;
   private final MemberScoreService memberScoreService;
   private final QuestionHitService questionHitService;
+  private final ElasticSearchService elasticSearchService;
 
   private static final int PAYBACK_SCORE = 5;
+  private final FailureRepository failureRepository;
 
   public QuestionResponse createQuestion(MemberResponse memberResponse, QuestionForm form) {
 
@@ -68,6 +73,19 @@ public class QnaService {
     //질문에 키워드 세팅
     List<String> keywords = KeywordUtil.getKeywords(form);
     question.setKeywords(keywords);
+
+    //elasticSearch 저장, 실패시 Failure 테이블에 실패 내역 남기기
+    try {
+      elasticSearchService.save(question);
+
+    } catch (Exception e) {
+      failureRepository.save(
+          Failure.builder()
+            .question(question)
+            .failureType(FailureType.SAVE_FAIL)
+            .build()
+      );
+    }
 
     return QuestionResponse.from(questionRepository.save(question));
   }
@@ -142,6 +160,18 @@ public class QnaService {
     List<String> keywords = KeywordUtil.getKeywords(form);
     question.setKeywords(keywords);
 
+    try {
+      elasticSearchService.save(question);
+
+    } catch (Exception e) {
+      failureRepository.save(
+          Failure.builder()
+              .question(question)
+              .failureType(FailureType.SAVE_FAIL)
+              .build()
+      );
+    }
+
     return QuestionResponse.from(questionRepository.save(question));
   }
 
@@ -169,7 +199,17 @@ public class QnaService {
         question
     );
 
-    questionRepository.deleteById(questionId);
+    try {
+      elasticSearchService.delete(questionId);
+
+    } catch (Exception e) {
+      failureRepository.save(
+          Failure.builder()
+              .question(question)
+              .failureType(FailureType.DELETE_FAIL)
+              .build()
+      );
+    }
   }
 
   @Transactional
