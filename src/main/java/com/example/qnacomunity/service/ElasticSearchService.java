@@ -1,6 +1,8 @@
 package com.example.qnacomunity.service;
 
 
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
@@ -12,9 +14,12 @@ import com.example.qnacomunity.entity.Question;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.QuestionRepository;
+import com.example.qnacomunity.type.SearchOrder;
+import com.example.qnacomunity.type.SearchRange;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
@@ -46,24 +51,20 @@ public class ElasticSearchService {
   public List<QuestionResponse> searchWord(Pageable pageable, SearchForm.WordSearchForm form) {
 
     String word = form.getWord().toLowerCase().replace("  ", " ").trim();
+
+    Query query;
     NativeQuery nativeQuery;
 
     //제목만 검색
-    if (form.getByTitleOnly() == 1) {
-
-      Query query = QueryBuilders.match()
+    if (form.getSearchRange() == SearchRange.TITLE) {
+      query = QueryBuilders.match()
           .query(word)
           .field("title")
           .build()._toQuery();
-
-      nativeQuery = new NativeQueryBuilder()
-          .withQuery(query)
-          .build();
     }
 
     //제목+내용 검색
     else {
-
       Query matchTitle = QueryBuilders.match()
           .query(word)
           .field("title")
@@ -74,36 +75,35 @@ public class ElasticSearchService {
           .field("content")
           .build()._toQuery();
 
-      Query query = QueryBuilders.bool()
+      query = QueryBuilders.bool()
           .should(matchTitle, matchContent)
           .build()._toQuery();
+    }
 
+    SortOptions sortOptions = new SortOptions.Builder()
+        .field(f -> f.field("created").order(SortOrder.Desc)).build();
+
+    //최신순 검색
+    if (form.getSearchOrder() == SearchOrder.CREATION_TIME) {
       nativeQuery = new NativeQueryBuilder()
           .withQuery(query)
+          .withSort(sortOptions)
+          .withPageable(pageable)
+          .build();
+    }
+
+    //정확도순 검색
+    else {
+      nativeQuery = new NativeQueryBuilder()
+          .withQuery(query)
+          .withPageable(pageable)
           .build();
     }
 
     SearchHits<QuestionDocument> searchHits =
         elasticsearchOperations.search(nativeQuery, QuestionDocument.class);
 
-    //최신순
-    if (form.getByLatest() == 1) {
-      return searchHits.get()
-          .map(s -> QuestionResponse.from(fromDocument(s.getContent())))
-          .sorted(Comparator.comparing(QuestionResponse::getCreatedAt, Comparator.reverseOrder()))
-          .skip((long) pageable.getPageNumber() * pageable.getPageSize())
-          .limit(pageable.getPageSize())
-          .toList();
-    }
-
-    //정확도순
-    else {
-      return searchHits.get()
-          .map(s -> QuestionResponse.from(fromDocument(s.getContent())))
-          .skip((long) pageable.getPageNumber() * pageable.getPageSize())
-          .limit(pageable.getPageSize())
-          .toList();
-    }
+    return searchHits.get().map(s -> QuestionResponse.from(fromDocument(s.getContent()))).toList();
   }
 
   @Transactional
@@ -122,20 +122,19 @@ public class ElasticSearchService {
         .operator(Operator.And)
         .build()._toQuery();
 
+    SortOptions sortOptions = new SortOptions.Builder()
+        .field(f -> f.field("created").order(SortOrder.Desc)).build();
+
     NativeQuery nativeQuery = new NativeQueryBuilder()
         .withQuery(matchQuery)
+        .withSort(sortOptions)
+        .withPageable(pageable)
         .build();
 
     SearchHits<QuestionDocument> searchHits =
         elasticsearchOperations.search(nativeQuery, QuestionDocument.class);
 
-    //최신순 정렬
-    return searchHits.get()
-        .map(s -> QuestionResponse.from(fromDocument(s.getContent())))
-        .sorted(Comparator.comparing(QuestionResponse::getCreatedAt, Comparator.reverseOrder()))
-        .skip((long) pageable.getPageNumber() * pageable.getPageSize())
-        .limit(pageable.getPageSize())
-        .toList();
+    return searchHits.get().map(s -> QuestionResponse.from(fromDocument(s.getContent()))).toList();
   }
 
   @Transactional
@@ -152,8 +151,12 @@ public class ElasticSearchService {
         .field("keywords")
         .build()._toQuery();
 
+    //결과에 질문글 자신이 들어있으면 제외해야 하므로 3+1 개를 받음
+    PageRequest pageRequest = PageRequest.of(0, 4);
+
     NativeQuery nativeQuery = new NativeQueryBuilder()
         .withQuery(matchQuery)
+        .withPageable(pageRequest)
         .build();
 
     SearchHits<QuestionDocument> searchHits =

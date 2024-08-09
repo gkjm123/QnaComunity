@@ -1,5 +1,7 @@
 package com.example.qnacomunity.dto.form;
 
+import com.example.qnacomunity.type.SearchOrder;
+import com.example.qnacomunity.type.SearchRange;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,11 +16,11 @@ public class SearchForm {
     @Size(min = 1, max = 20, message = "양식 오류: 검색어를 1~20자 사이로 입력해주세요.")
     String word;
 
-    //최신순 = 1, 정확도순 = 0
-    int byLatest;
+    //검색 정렬(최신/정확도)
+    SearchOrder searchOrder;
 
-    //제목만 = 1, 제목+내용 = 0
-    int byTitleOnly;
+    //검색 범위(제목/제목+내용)
+    SearchRange searchRange;
   }
 
   @Getter
