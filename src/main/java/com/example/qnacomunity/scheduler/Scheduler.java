@@ -10,6 +10,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,20 +23,22 @@ public class Scheduler {
   private final FailureRepository failureRepository;
   private final ElasticSearchService elasticSearchService;
 
+  private static final int PAGE_SIZE = 10;
+
   //매 시간 마다 실패 내역 확인후 재시도
   @Scheduled(cron = "${spring.scheduler.time}")
   @Transactional
   public void failurePatch() {
 
-    long totalFailure = failureRepository.count();
-    long totalPage = (long) Math.ceil(totalFailure / 10.0);
+    Pageable pageable = PageRequest.of(0, PAGE_SIZE);
 
-    List<Failure> success = new ArrayList<>();
+    while (true) {
 
-    for (int i = 0; i < totalPage; i++) {
+      List<Failure> failures = failureRepository.findAllBy(pageable);
 
-      PageRequest pageRequest = PageRequest.of(i, 10);
-      List<Failure> failures = failureRepository.findAllBy(pageRequest);
+      if (failures.isEmpty()) {
+        break;
+      }
 
       for (Failure failure : failures) {
 
@@ -44,24 +47,22 @@ public class Scheduler {
 
           if (failure.getFailureType() == FailureType.SAVE_FAIL) {
             elasticSearchService.save(question);
-            success.add(failure);
             log.info("question {}: ES 저장 성공", question.getId());
           }
 
           else {
             elasticSearchService.delete(question.getId());
-            success.add(failure);
             log.info("question {}: ES 삭제 성공", question.getId());
           }
+
+          failureRepository.delete(failure);
 
         } catch (Exception e) {
           log.error("ES 업데이트 실패: {}", e.getMessage());
         }
       }
-    }
 
-    if (!success.isEmpty()) {
-      failureRepository.deleteAll(success);
+      pageable = pageable.next();
     }
   }
 }
