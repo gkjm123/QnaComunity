@@ -10,13 +10,15 @@ import com.example.qnacomunity.dto.form.SearchForm;
 import com.example.qnacomunity.dto.response.QuestionResponse;
 import com.example.qnacomunity.elasticsearch.ElasticSearchRepository;
 import com.example.qnacomunity.elasticsearch.QuestionDocument;
+import com.example.qnacomunity.entity.ElasticFailure;
 import com.example.qnacomunity.entity.Question;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
+import com.example.qnacomunity.repository.ElasticFailureRepository;
 import com.example.qnacomunity.repository.QuestionRepository;
+import com.example.qnacomunity.type.ElasticFailureType;
 import com.example.qnacomunity.type.SearchOrder;
 import com.example.qnacomunity.type.SearchRange;
-import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -35,16 +37,37 @@ public class ElasticSearchService {
   private final QuestionRepository questionRepository;
   private final ElasticsearchOperations elasticsearchOperations;
   private final ElasticSearchRepository elasticSearchRepository;
+  private final ElasticFailureRepository elasticFailureRepository;
 
-  @Transactional
   public void save(Question question) {
-    QuestionDocument questionDocument = QuestionDocument.from(question);
-    elasticSearchRepository.save(questionDocument);
+
+    try {
+      QuestionDocument questionDocument = QuestionDocument.from(question);
+      elasticSearchRepository.save(questionDocument);
+
+    } catch (Exception e) {
+      elasticFailureRepository.save(
+          ElasticFailure.builder()
+              .question(question)
+              .elasticFailureType(ElasticFailureType.SAVE_FAIL)
+              .build()
+      );
+    }
   }
 
-  @Transactional
-  public void delete(Long id) {
-    elasticSearchRepository.deleteById(id);
+  public void delete(Question question) {
+
+    try {
+      elasticSearchRepository.deleteById(question.getId());
+
+    } catch (Exception e) {
+      elasticFailureRepository.save(
+          ElasticFailure.builder()
+              .question(question)
+              .elasticFailureType(ElasticFailureType.DELETE_FAIL)
+              .build()
+      );
+    }
   }
 
   @Transactional
