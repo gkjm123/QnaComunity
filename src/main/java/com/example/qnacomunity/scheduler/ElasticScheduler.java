@@ -3,11 +3,9 @@ package com.example.qnacomunity.scheduler;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.service.ElasticSearchService;
-import com.example.qnacomunity.entity.Failure;
+import com.example.qnacomunity.entity.ElasticFailure;
 import com.example.qnacomunity.entity.Question;
-import com.example.qnacomunity.repository.FailureRepository;
-import com.example.qnacomunity.type.FailureType;
-import java.util.ArrayList;
+import com.example.qnacomunity.repository.ElasticFailureRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,31 +18,31 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class Scheduler {
+public class ElasticScheduler {
 
-  private final FailureRepository failureRepository;
+  private final ElasticFailureRepository elasticFailureRepository;
   private final ElasticSearchService elasticSearchService;
 
   private static final int PAGE_SIZE = 10;
 
   //매 시간 마다 실패 내역 확인후 재시도
-  @Scheduled(cron = "${spring.scheduler.time}")
+  @Scheduled(cron = "${spring.scheduler.es-update}")
   @Transactional
-  public void failurePatch() {
+  public void elasticFailurePatch() {
 
-    int count = (int) Math.ceil((double) failureRepository.count() / PAGE_SIZE);
+    int count = (int) Math.ceil((double) elasticFailureRepository.count() / PAGE_SIZE);
 
     for (int i = 0; i < count; i++) {
 
       Pageable pageable = PageRequest.of(i, PAGE_SIZE);
-      List<Failure> failures = failureRepository.findAllBy(pageable);
+      List<ElasticFailure> elasticFailures = elasticFailureRepository.findAllBy(pageable);
 
-      for (Failure failure : failures) {
+      for (ElasticFailure elasticFailure : elasticFailures) {
 
         try {
-          Question question = failure.getQuestion();
+          Question question = elasticFailure.getQuestion();
 
-          switch(failure.getFailureType()) {
+          switch(elasticFailure.getElasticFailureType()) {
 
             case SAVE_FAIL:
               elasticSearchService.save(question);
@@ -52,7 +50,7 @@ public class Scheduler {
               break;
 
             case DELETE_FAIL:
-              elasticSearchService.delete(question.getId());
+              elasticSearchService.delete(question);
               log.info("question {}: ES 삭제 성공", question.getId());
               break;
 
@@ -60,7 +58,7 @@ public class Scheduler {
               throw new CustomException(ErrorCode.FAILURE_TYPE_ERROR);
           }
 
-          failureRepository.delete(failure);
+          elasticFailureRepository.delete(elasticFailure);
 
         } catch (Exception e) {
           log.error("ES 연동 실패", e);
