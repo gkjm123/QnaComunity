@@ -1,5 +1,7 @@
 package com.example.qnacomunity.scheduler;
 
+import com.example.qnacomunity.exception.CustomException;
+import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.service.ElasticSearchService;
 import com.example.qnacomunity.entity.Failure;
 import com.example.qnacomunity.entity.Question;
@@ -30,39 +32,40 @@ public class Scheduler {
   @Transactional
   public void failurePatch() {
 
-    Pageable pageable = PageRequest.of(0, PAGE_SIZE);
+    int count = (int) Math.ceil((double) failureRepository.count() / PAGE_SIZE);
 
-    while (true) {
+    for (int i = 0; i < count; i++) {
 
+      Pageable pageable = PageRequest.of(i, PAGE_SIZE);
       List<Failure> failures = failureRepository.findAllBy(pageable);
-
-      if (failures.isEmpty()) {
-        break;
-      }
 
       for (Failure failure : failures) {
 
         try {
           Question question = failure.getQuestion();
 
-          if (failure.getFailureType() == FailureType.SAVE_FAIL) {
-            elasticSearchService.save(question);
-            log.info("question {}: ES 저장 성공", question.getId());
-          }
+          switch(failure.getFailureType()) {
 
-          else {
-            elasticSearchService.delete(question.getId());
-            log.info("question {}: ES 삭제 성공", question.getId());
+            case SAVE_FAIL:
+              elasticSearchService.save(question);
+              log.info("question {}: ES 저장 성공", question.getId());
+              break;
+
+            case DELETE_FAIL:
+              elasticSearchService.delete(question.getId());
+              log.info("question {}: ES 삭제 성공", question.getId());
+              break;
+
+            default:
+              throw new CustomException(ErrorCode.FAILURE_TYPE_ERROR);
           }
 
           failureRepository.delete(failure);
 
         } catch (Exception e) {
-          log.error("ES 업데이트 실패: {}", e.getMessage());
+          log.error("ES 연동 실패", e);
         }
       }
-
-      pageable = pageable.next();
     }
   }
 }

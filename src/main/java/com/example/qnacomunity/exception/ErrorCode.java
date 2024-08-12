@@ -23,7 +23,8 @@ public enum ErrorCode {
   GRADE_EXIST("이름이나 최소 스코어가 동일한 등급이 있습니다."),
   GRADE_NOT_FOUND("등급을 찾을수 없습니다."),
   SCORE_NOT_ENOUGH("가지고 있는 스코어보다 보상을 많이 걸 수 없습니다."),
-  ACQUIRE_LOCK_FAIL("락 획득 실패");
+  ACQUIRE_LOCK_FAIL("락 획득 실패"),
+  FAILURE_TYPE_ERROR("연동 실패 타입 확인 불가");
 
   private final String message;
 }
