@@ -8,15 +8,12 @@ import com.example.qnacomunity.dto.response.AnswerResponse;
 import com.example.qnacomunity.dto.response.MemberResponse;
 import com.example.qnacomunity.dto.response.QuestionResponse;
 import com.example.qnacomunity.entity.Answer;
-import com.example.qnacomunity.entity.Failure;
 import com.example.qnacomunity.entity.Member;
 import com.example.qnacomunity.entity.Question;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.AnswerRepository;
-import com.example.qnacomunity.repository.FailureRepository;
 import com.example.qnacomunity.repository.QuestionRepository;
-import com.example.qnacomunity.type.FailureType;
 import com.example.qnacomunity.type.ScoreChangeType;
 import com.example.qnacomunity.type.ScoreDescription;
 import com.example.qnacomunity.util.KeywordUtil;
@@ -43,7 +40,8 @@ public class QnaService {
   private final ElasticSearchService elasticSearchService;
 
   private static final int PAYBACK_SCORE = 5;
-  private final FailureRepository failureRepository;
+  private final RankService rankService;
+
 
   public QuestionResponse createQuestion(MemberResponse memberResponse, QuestionForm form) {
 
@@ -77,19 +75,10 @@ public class QnaService {
     question.setKeywords(keywords);
 
     //elasticSearch 저장, 실패시 Failure 테이블에 실패 내역 남기기
-    try {
-      elasticSearchService.save(question);
+    elasticSearchService.save(question);
 
-    } catch (Exception e) {
-      log.error("ES 연동 실패: {}", e.getMessage());
-
-      failureRepository.save(
-          Failure.builder()
-            .question(question)
-            .failureType(FailureType.SAVE_FAIL)
-            .build()
-      );
-    }
+    //Redis Sorted Set 키워드 스코어 1씩 증가(키워드 랭킹)
+    rankService.increaseKeywordRank(keywords);
 
     return QuestionResponse.from(questionRepository.save(question));
   }
@@ -164,19 +153,10 @@ public class QnaService {
     List<String> keywords = KeywordUtil.getKeywords(form);
     question.setKeywords(keywords);
 
-    try {
-      elasticSearchService.save(question);
+    elasticSearchService.save(question);
 
-    } catch (Exception e) {
-      log.error("ES 연동 실패: {}", e.getMessage());
-
-      failureRepository.save(
-          Failure.builder()
-              .question(question)
-              .failureType(FailureType.SAVE_FAIL)
-              .build()
-      );
-    }
+    //Redis Sorted Set 키워드 스코어 1씩 증가(키워드 랭킹)
+    rankService.increaseKeywordRank(keywords);
 
     return QuestionResponse.from(questionRepository.save(question));
   }
@@ -205,19 +185,7 @@ public class QnaService {
         question
     );
 
-    try {
-      elasticSearchService.delete(questionId);
-
-    } catch (Exception e) {
-      log.error("ES 연동 실패: {}", e.getMessage());
-
-      failureRepository.save(
-          Failure.builder()
-              .question(question)
-              .failureType(FailureType.DELETE_FAIL)
-              .build()
-      );
-    }
+    elasticSearchService.delete(question);
   }
 
   @Transactional
@@ -349,6 +317,9 @@ public class QnaService {
         ScoreDescription.ANSWER_PICKED,
         question
     );
+
+    //답변이 채택시 받은 스코어만 멤버 랭크에 반영
+    rankService.increaseMemberRank(answer.getMember().getNickName(), question.getReward());
 
     //채택된 답변에 채택 시간(picked_at) 세팅
     answer.setPickedAt(LocalDateTime.now());
