@@ -21,6 +21,7 @@ import com.example.qnacomunity.type.SearchOrder;
 import com.example.qnacomunity.type.SearchRange;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -30,6 +31,7 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ElasticSearchService {
@@ -46,6 +48,8 @@ public class ElasticSearchService {
       elasticSearchRepository.save(questionDocument);
 
     } catch (Exception e) {
+      log.error("ES 연동 에러", e);
+
       elasticFailureRepository.save(
           ElasticFailure.builder()
               .question(question)
@@ -61,6 +65,8 @@ public class ElasticSearchService {
       elasticSearchRepository.deleteById(question.getId());
 
     } catch (Exception e) {
+      log.error("ES 연동 에러", e);
+
       elasticFailureRepository.save(
           ElasticFailure.builder()
               .question(question)
