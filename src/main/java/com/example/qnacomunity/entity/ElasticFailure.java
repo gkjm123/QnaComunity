@@ -1,6 +1,6 @@
 package com.example.qnacomunity.entity;
 
-import com.example.qnacomunity.type.FailureType;
+import com.example.qnacomunity.type.ElasticFailureType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -23,7 +23,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Failure {
+public class ElasticFailure {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -32,7 +32,7 @@ public class Failure {
   private Question question;
 
   @Enumerated(EnumType.STRING)
-  private FailureType failureType;
+  private ElasticFailureType elasticFailureType;
 
   @CreationTimestamp
   private LocalDateTime createdAt;

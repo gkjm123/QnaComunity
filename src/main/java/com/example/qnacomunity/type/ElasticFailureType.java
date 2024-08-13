@@ -1,5 +1,5 @@
 package com.example.qnacomunity.type;
 
-public enum FailureType {
+public enum ElasticFailureType {
   SAVE_FAIL, DELETE_FAIL
 }
