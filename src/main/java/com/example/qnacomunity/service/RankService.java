@@ -1,113 +1,104 @@
 package com.example.qnacomunity.service;
 
-import com.example.qnacomunity.dto.response.Rank;
-import com.example.qnacomunity.entity.RedisFailure;
-import com.example.qnacomunity.repository.RedisFailureRepository;
-import com.example.qnacomunity.type.RankType;
-import java.util.Collections;
+import com.example.qnacomunity.entity.Member;
+import com.example.qnacomunity.exception.CustomException;
+import com.example.qnacomunity.exception.ErrorCode;
+import com.example.qnacomunity.repository.MemberRepository;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RankService {
 
-  private final RedisFailureRepository redisFailureRepository;
+  private final MemberRepository memberRepository;
   private final RedisTemplate<String, String> redisTemplate;
+  private static final ObjectMapper mapper = new ObjectMapper();
 
   private static final int RANK_LIMIT = 10;
 
-  @Transactional
-  public void increaseKeywordRank(List<String> keywords) {
+  @Getter
+  @Setter
+  @AllArgsConstructor
+  @NoArgsConstructor
+  public static class RankedMember {
 
-    for (String keyword : keywords) {
-
-      try {
-        redisTemplate.opsForZSet().incrementScore(RankType.KEYWORD.toString(), keyword, 1);
-
-      } catch (Exception e) {
-        log.error("Redis 연동 에러", e);
-
-        redisFailureRepository.save(
-            RedisFailure.builder()
-                .redisKey(RankType.KEYWORD.toString())
-                .redisValue(keyword)
-                .score(1)
-                .build()
-        );
-      }
-    }
+    private String name;
+    private int score;
   }
 
-  @Transactional
-  public void increaseMemberRank(String nickName, int score) {
+  public void updateMemberRank(int scoreBefore, int scoreAfter) {
+
+    String redisMinScore = redisTemplate.opsForValue().get("minScore");
+
+    //번경 전,후 스코어가 랭커 최소 스코어보다 작으면 랭킹에 변동 주지 않으므로 종료
+    if (StringUtils.hasText(redisMinScore)
+        && Integer.parseInt(redisMinScore) > scoreBefore
+        && Integer.parseInt(redisMinScore) > scoreAfter
+    ) {
+      return;
+    }
+    updateMemberRank();
+  }
+
+  public List<RankedMember> updateMemberRank() {
+
+    List<Member> members = memberRepository.findFirst10ByOrderByScoreDesc();
+    List<RankedMember> rankedMembers = members.stream()
+        .map(m -> new RankedMember(m.getNickName(), m.getScore())).toList();
+
+    int minScore;
+
+    if (rankedMembers.size() < RANK_LIMIT) {
+      minScore = 0;
+    } else {
+      minScore = rankedMembers.get(RANK_LIMIT - 1).getScore();
+    }
 
     try {
-      redisTemplate.opsForZSet().incrementScore(RankType.MEMBER.toString(), nickName, score);
+      String rank = mapper.writeValueAsString(rankedMembers);
 
-    } catch (Exception e) {
-      log.error("Redis 연동 에러", e);
+      redisTemplate.opsForValue().set("memberRank", rank);
+      redisTemplate.opsForValue().set("minScore", Integer.toString(minScore));
 
-      redisFailureRepository.save(
-          RedisFailure.builder()
-              .redisKey(RankType.MEMBER.toString())
-              .redisValue(nickName)
-              .score(score)
-              .build()
-      );
+    } catch (JsonProcessingException e) {
+      log.error("멤버 랭크 업데이트 오류", e);
+      throw new CustomException(ErrorCode.RANK_UPDATE_FAIL);
     }
+
+    return rankedMembers;
   }
 
-  public List<Rank> getRank(RankType rankType) {
+  public List<RankedMember> getMemberRank() {
 
-    List<Rank> rankers;
-    Long count = redisTemplate.opsForZSet().size(rankType.toString());
+    String redisMinScore = redisTemplate.opsForValue().get("minScore");
 
-    if (count == null) {
-      return Collections.emptyList();
+    if (!StringUtils.hasText(redisMinScore)) {
+      return updateMemberRank();
     }
 
-    if (count <= RANK_LIMIT) {
-      rankers = redisTemplate.opsForZSet()
-          .reverseRangeWithScores(rankType.toString(), 0, -1)
-          .stream().map(m -> new Rank(m.getValue(), m.getScore().intValue()))
-          .toList();
-    } else {
+    String rank = redisTemplate.opsForValue().get("memberRank");
 
-      //마지막 등수의 점수
-      Double lastScore = redisTemplate.opsForZSet()
-          .reverseRangeWithScores(rankType.toString(), RANK_LIMIT - 1, RANK_LIMIT - 1)
-          .stream().findFirst().get().getScore();
+    try {
+      return mapper.readValue(rank, new TypeReference<>() {
+      });
 
-      //마지막 등수가 여러명일 경우 그들까지 포함한 총 랭커의 수
-      long totalRanker = RANK_LIMIT - 1
-          + redisTemplate.opsForZSet()
-          .rangeByScore(rankType.toString(), lastScore, lastScore)
-          .stream().count();
-
-      //랭커들의 점수가 높은 순서대로 리스트로 받음
-      rankers = redisTemplate.opsForZSet()
-          .reverseRangeWithScores(rankType.toString(), 0, totalRanker - 1)
-          .stream().map(m -> new Rank(m.getValue(), m.getScore().intValue()))
-          .toList();
+    } catch (JacksonException e) {
+      log.error("멤버 랭크 확인 오류", e);
+      throw new CustomException(ErrorCode.RANK_NOT_FOUND);
     }
-
-    //등수 세팅(동일 점수일때 동일 등수를 가지도록)
-    for (int i = 0; i < rankers.size(); i++) {
-
-      if (i == 0) {
-        rankers.get(i).setRank(1);
-      } else if (rankers.get(i).getScore() == rankers.get(i - 1).getScore()) {
-        rankers.get(i).setRank(rankers.get(i - 1).getRank());
-      } else {
-        rankers.get(i).setRank(i + 1);
-      }
-    }
-    return rankers;
   }
 }

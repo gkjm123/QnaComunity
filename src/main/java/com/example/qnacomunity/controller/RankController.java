@@ -1,8 +1,7 @@
 package com.example.qnacomunity.controller;
 
-import com.example.qnacomunity.dto.response.Rank;
 import com.example.qnacomunity.service.RankService;
-import com.example.qnacomunity.type.RankType;
+import com.example.qnacomunity.service.RankService.RankedMember;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +17,7 @@ public class RankController {
   private final RankService rankService;
 
   @GetMapping("/member")
-  public ResponseEntity<List<Rank>> getMemberRank() {
-    return ResponseEntity.ok(rankService.getRank(RankType.MEMBER));
-  }
-
-  @GetMapping("/keyword")
-  public ResponseEntity<List<Rank>> getKeywordRank() {
-    return ResponseEntity.ok(rankService.getRank(RankType.KEYWORD));
+  public ResponseEntity<List<RankedMember>> getMemberRank() {
+    return ResponseEntity.ok(rankService.getMemberRank());
   }
 }
