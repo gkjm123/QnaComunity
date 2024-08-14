@@ -77,8 +77,11 @@ public class QnaService {
     //elasticSearch 저장, 실패시 Failure 테이블에 실패 내역 남기기
     elasticSearchService.save(question);
 
-    //Redis Sorted Set 키워드 스코어 1씩 증가(키워드 랭킹)
-    rankService.increaseKeywordRank(keywords);
+    //멤버 랭크 업데이트
+    rankService.updateMemberRank(
+        memberResponse.getScore(), //변경 전 스코어
+        memberResponse.getScore() - form.getReward() //변경 후 스코어
+    );
 
     return QuestionResponse.from(questionRepository.save(question));
   }
@@ -155,8 +158,11 @@ public class QnaService {
 
     elasticSearchService.save(question);
 
-    //Redis Sorted Set 키워드 스코어 1씩 증가(키워드 랭킹)
-    rankService.increaseKeywordRank(keywords);
+    //멤버 랭크 업데이트
+    rankService.updateMemberRank(
+        memberResponse.getScore(), //변경 전 스코어
+        memberResponse.getScore() + question.getReward() - form.getReward() //변경 후 스코어
+    );
 
     return QuestionResponse.from(questionRepository.save(question));
   }
@@ -183,6 +189,12 @@ public class QnaService {
         question.getReward(),
         ScoreDescription.QUESTION_DELETE,
         question
+    );
+
+    //멤버 랭크 업데이트
+    rankService.updateMemberRank(
+        memberResponse.getScore(), //변경 전 스코어
+        memberResponse.getScore() + question.getReward() //변경 후 스코어
     );
 
     elasticSearchService.delete(question);
@@ -318,8 +330,12 @@ public class QnaService {
         question
     );
 
-    //답변이 채택시 받은 스코어만 멤버 랭크에 반영
-    rankService.increaseMemberRank(answer.getMember().getNickName(), question.getReward());
+    //멤버 랭크 업데이트
+    rankService.updateMemberRank(
+        Math.max(memberResponse.getScore(), answer.getMember().getScore()), //변경 전 스코어(질문자,답변자 중 큰쪽)
+        Math.max(memberResponse.getScore() + PAYBACK_SCORE,
+            answer.getMember().getScore() + question.getReward()) //변경 후 스코어(질문자,답변자 중 큰쪽)
+    );
 
     //채택된 답변에 채택 시간(picked_at) 세팅
     answer.setPickedAt(LocalDateTime.now());
