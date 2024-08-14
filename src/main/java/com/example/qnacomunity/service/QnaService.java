@@ -18,7 +18,9 @@ import com.example.qnacomunity.type.ScoreChangeType;
 import com.example.qnacomunity.type.ScoreDescription;
 import com.example.qnacomunity.util.KeywordUtil;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -71,8 +73,7 @@ public class QnaService {
     question.setMember(member);
 
     //질문에 키워드 세팅
-    List<String> keywords = KeywordUtil.getKeywords(form);
-    question.setKeywords(keywords);
+    setKeywords(question, form);
 
     //elasticSearch 저장, 실패시 Failure 테이블에 실패 내역 남기기
     elasticSearchService.save(question);
@@ -153,8 +154,7 @@ public class QnaService {
     question.setReward(form.getReward());
 
     //질문에 키워드 세팅
-    List<String> keywords = KeywordUtil.getKeywords(form);
-    question.setKeywords(keywords);
+    setKeywords(question, form);
 
     elasticSearchService.save(question);
 
@@ -339,5 +339,18 @@ public class QnaService {
 
     //채택된 답변에 채택 시간(picked_at) 세팅
     answer.setPickedAt(LocalDateTime.now());
+  }
+
+  private void setKeywords(Question question, QuestionForm form) {
+
+    List<String> keywords = KeywordUtil.getKeywords(form);
+    Map<String, List<String>> keywordMap = new HashMap<>();
+    keywordMap.put("keywords", keywords);
+    question.setKeywords(keywordMap);
+    questionRepository.save(question);
+
+    for (String keyword : keywords) {
+      rankService.updateKeywordRank(keyword);
+    }
   }
 }

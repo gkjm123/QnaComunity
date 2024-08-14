@@ -172,7 +172,7 @@ public class ElasticSearchService {
     Question question = questionRepository.findById(questionId)
         .orElseThrow(() -> new CustomException(ErrorCode.Q_NOT_FOUND));
 
-    String keyword = String.join(" ", question.getKeywords());
+    String keyword = String.join(" ", question.getKeywords().get("keywords"));
 
     //키워드가 하나 이상 일치하는 글 검색
     Query matchQuery = QueryBuilders.match()

@@ -4,10 +4,12 @@ import com.example.qnacomunity.entity.Member;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.MemberRepository;
+import com.example.qnacomunity.repository.QuestionRepository;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Collections;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,9 +26,10 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class RankService {
 
+  private final QuestionRepository questionRepository;
   private final MemberRepository memberRepository;
   private final RedisTemplate<String, String> redisTemplate;
-  private static final ObjectMapper mapper = new ObjectMapper();
+  private final ObjectMapper mapper;
 
   private static final int RANK_LIMIT = 10;
 
@@ -34,7 +37,7 @@ public class RankService {
   @Setter
   @AllArgsConstructor
   @NoArgsConstructor
-  public static class RankedMember {
+  public static class Rank {
 
     private String name;
     private int score;
@@ -54,22 +57,22 @@ public class RankService {
     updateMemberRank();
   }
 
-  public List<RankedMember> updateMemberRank() {
+  public List<Rank> updateMemberRank() {
 
     List<Member> members = memberRepository.findFirst10ByOrderByScoreDesc();
-    List<RankedMember> rankedMembers = members.stream()
-        .map(m -> new RankedMember(m.getNickName(), m.getScore())).toList();
+    List<Rank> ranks = members.stream()
+        .map(m -> new Rank(m.getNickName(), m.getScore())).toList();
 
     int minScore;
 
-    if (rankedMembers.size() < RANK_LIMIT) {
+    if (ranks.size() < RANK_LIMIT) {
       minScore = 0;
     } else {
-      minScore = rankedMembers.get(RANK_LIMIT - 1).getScore();
+      minScore = ranks.get(RANK_LIMIT - 1).getScore();
     }
 
     try {
-      String rank = mapper.writeValueAsString(rankedMembers);
+      String rank = mapper.writeValueAsString(ranks);
 
       redisTemplate.opsForValue().set("memberRank", rank);
       redisTemplate.opsForValue().set("minScore", Integer.toString(minScore));
@@ -79,10 +82,10 @@ public class RankService {
       throw new CustomException(ErrorCode.RANK_UPDATE_FAIL);
     }
 
-    return rankedMembers;
+    return ranks;
   }
 
-  public List<RankedMember> getMemberRank() {
+  public List<Rank> getMemberRank() {
 
     String redisMinScore = redisTemplate.opsForValue().get("minScore");
 
@@ -100,5 +103,28 @@ public class RankService {
       log.error("멤버 랭크 확인 오류", e);
       throw new CustomException(ErrorCode.RANK_NOT_FOUND);
     }
+  }
+
+  public void updateKeywordRank(String keyword) {
+    int keywordCount = getKeywordCount(keyword);
+    redisTemplate.opsForZSet().add("keywordRank", keyword, keywordCount);
+  }
+
+  private int getKeywordCount(String keyword) {
+    return questionRepository.countKeywords(keyword);
+  }
+
+  public List<Rank> getKeywordRank() {
+
+    Long count = redisTemplate.opsForZSet().size("keywordRank");
+
+    if (count == null) {
+      return Collections.emptyList();
+    }
+
+    return redisTemplate.opsForZSet()
+        .reverseRangeWithScores("keywordRank", 0, count <= RANK_LIMIT ? -1 : RANK_LIMIT - 1)
+        .stream().map(m -> new Rank(m.getValue(), m.getScore().intValue()))
+        .toList();
   }
 }
