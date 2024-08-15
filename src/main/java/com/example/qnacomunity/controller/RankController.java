@@ -1,7 +1,7 @@
 package com.example.qnacomunity.controller;
 
 import com.example.qnacomunity.service.RankService;
-import com.example.qnacomunity.service.RankService.RankedMember;
+import com.example.qnacomunity.service.RankService.Rank;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +17,12 @@ public class RankController {
   private final RankService rankService;
 
   @GetMapping("/member")
-  public ResponseEntity<List<RankedMember>> getMemberRank() {
+  public ResponseEntity<List<Rank>> getMemberRank() {
     return ResponseEntity.ok(rankService.getMemberRank());
+  }
+
+  @GetMapping("/keyword")
+  public ResponseEntity<List<Rank>> getKeywordRank() {
+    return ResponseEntity.ok(rankService.getKeywordRank());
   }
 }

@@ -35,7 +35,7 @@ public class QuestionDocument {
         .id(question.getId())
         .title(question.getTitle())
         .content(question.getContent())
-        .keywords(String.join(" ", question.getKeywords()))
+        .keywords(String.join(" ", question.getKeywords().get("keywords")))
         .created(Timestamp.valueOf(question.getCreatedAt()).getTime())
         .build();
   }

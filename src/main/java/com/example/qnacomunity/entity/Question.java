@@ -1,8 +1,7 @@
 package com.example.qnacomunity.entity;
 
-import com.example.qnacomunity.util.KeywordConverter;
-import jakarta.persistence.Convert;
-import jakarta.persistence.ElementCollection;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,6 +19,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Type;
 
 @Entity
 @Getter
@@ -41,8 +42,9 @@ public class Question {
   private String content;
   private int reward;
 
-  @Convert(converter = KeywordConverter.class)
-  private List<String> keywords;
+  @Type(JsonType.class)
+  @Column(name = "keywords", columnDefinition = "longtext")
+  private Map<String, List<String>> keywords;
 
   private int hits;
 

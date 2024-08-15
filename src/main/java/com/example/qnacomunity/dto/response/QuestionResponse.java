@@ -32,7 +32,7 @@ public class QuestionResponse {
         .title(question.getTitle())
         .content(question.getContent())
         .reward(question.getReward())
-        .keywords(question.getKeywords())
+        .keywords(question.getKeywords().get("keywords"))
         .hits(question.getHits())
         .createdAt(question.getCreatedAt())
         .build();
