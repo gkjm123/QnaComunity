@@ -138,6 +138,10 @@ public class QnaService {
       throw new CustomException(ErrorCode.SCORE_NOT_ENOUGH);
     }
 
+    question.setTitle(form.getTitle());
+    question.setContent(form.getContent());
+    question.setReward(form.getReward());
+
     //변경된 보상 스코어 만큼 멤버에게 스코어 증감 또는 차감
     if (question.getReward() != form.getReward()) {
       memberScoreService.change(
@@ -149,13 +153,10 @@ public class QnaService {
       );
     }
 
-    question.setTitle(form.getTitle());
-    question.setContent(form.getContent());
-    question.setReward(form.getReward());
-
     //질문에 키워드 세팅
     setKeywords(question, form);
 
+    //Elasticsearch 도큐먼트 업데이트
     elasticSearchService.save(question);
 
     //멤버 랭크 업데이트
