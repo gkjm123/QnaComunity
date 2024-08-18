@@ -7,6 +7,7 @@ import com.example.qnacomunity.repository.ScoreHistoryRepository;
 import com.example.qnacomunity.security.CustomUserDetail;
 import com.example.qnacomunity.service.MemberService;
 import com.example.qnacomunity.type.Role;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.Objects;
@@ -35,21 +36,21 @@ public class MemberController {
   private final MemberService memberService;
   private final ScoreHistoryRepository scoreHistoryRepository;
 
-  //회원 가입
+  @Operation(summary = "일반 회원 가입")
   @PostMapping("/registration")
   public ResponseEntity<?> signUp(@Valid @RequestBody MemberForm.SignUpForm form) {
 
     return ResponseEntity.ok(memberService.signUp(form, Role.ROLE_USER));
   }
 
-  //매니저 회원 가입
+  @Operation(summary = "매니저 회원 가입")
   @PostMapping("/manager-registration")
   public ResponseEntity<?> managerSignUp(@Valid @RequestBody MemberForm.SignUpForm form) {
 
     return ResponseEntity.ok(memberService.signUp(form, Role.ROLE_MANAGER));
   }
 
-  //로그인
+  @Operation(summary = "로그인")
   @PostMapping("/login")
   public ResponseEntity<String> signIn(@Valid @RequestBody MemberForm.SignInform form) {
 
@@ -59,7 +60,7 @@ public class MemberController {
     return ResponseEntity.ok(token);
   }
 
-  //멤버 역할 확인
+  @Operation(summary = "역할(ROLE) 확인")
   @GetMapping("/role")
   public ResponseEntity<String> getRole(@AuthenticationPrincipal CustomUserDetail userDetail) {
     if (userDetail == null) {
@@ -77,13 +78,13 @@ public class MemberController {
     }
   }
 
-  //멤버 정보 확인
+  @Operation(summary = "멤버 등급 확인")
   @GetMapping("/info")
   public ResponseEntity<MemberResponse> getInfo(@AuthenticationPrincipal CustomUserDetail userDetail) {
     return ResponseEntity.ok(userDetail.getMemberResponse());
   }
 
-  //멤버 정보 수정
+  @Operation(summary = "멤버 정보 수정")
   @PutMapping("/info")
   public ResponseEntity<?> updateInfo(@AuthenticationPrincipal CustomUserDetail userDetail,
       @Valid @RequestBody MemberForm.UpdateInfoForm form
@@ -92,7 +93,7 @@ public class MemberController {
     return ResponseEntity.ok(memberService.updateInfo(userDetail.getMemberResponse(), form));
   }
 
-  //프로필 사진 변경
+  @Operation(summary = "프로필 사진 변경")
   @PutMapping("/profile")
   public ResponseEntity<String> updateProfile(
       @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -105,7 +106,7 @@ public class MemberController {
     return ResponseEntity.ok("프로필 업데이트 완료");
   }
 
-  //패스워드 변경
+  @Operation(summary = "비밀번호 변경")
   @PutMapping("/password")
   public ResponseEntity<?> updatePassword(@AuthenticationPrincipal CustomUserDetail userDetail,
       @Valid @RequestBody MemberForm.PasswordChangeForm form
@@ -114,14 +115,14 @@ public class MemberController {
     return ResponseEntity.ok(memberService.updatePassword(userDetail.getMemberResponse(), form));
   }
 
-  //회원 탈퇴
+  @Operation(summary = "회원 탈퇴")
   @DeleteMapping("/removal")
   public ResponseEntity<String> delete(@AuthenticationPrincipal CustomUserDetail userDetail) {
     memberService.delete(userDetail.getMemberResponse());
     return ResponseEntity.ok("회원 탈퇴 완료");
   }
 
-  //스코어 히스토리 확인
+  @Operation(summary = "스코어 변경 내역 확인")
   @GetMapping("/score-histories")
   public ResponseEntity<Page<ScoreHistoryResponse>> getScoreHistories(
       @AuthenticationPrincipal CustomUserDetail userDetail,

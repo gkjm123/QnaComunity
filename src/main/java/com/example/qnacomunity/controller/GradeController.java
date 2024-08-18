@@ -4,6 +4,7 @@ import com.example.qnacomunity.dto.form.GradeForm;
 import com.example.qnacomunity.dto.response.GradeResponse;
 import com.example.qnacomunity.security.CustomUserDetail;
 import com.example.qnacomunity.service.GradeService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class GradeController {
 
   private final GradeService gradeService;
 
+  @Operation(summary = "등급 생성(매니저 기능)")
   @PreAuthorize("hasRole('MANAGER')")
   @PostMapping
   public ResponseEntity<GradeResponse> createGrade(@Valid @RequestBody GradeForm form) {
@@ -36,6 +38,7 @@ public class GradeController {
     return ResponseEntity.ok(gradeService.createGrade(form));
   }
 
+  @Operation(summary = "등급 수정(매니저 기능)")
   @PreAuthorize("hasRole('MANAGER')")
   @PutMapping("/{gradeId}")
   public ResponseEntity<GradeResponse> updateGrade(
@@ -46,6 +49,7 @@ public class GradeController {
     return ResponseEntity.ok(gradeService.updateGrade(gradeId, form));
   }
 
+  @Operation(summary = "등급 삭제(매니저 기능)")
   @PreAuthorize("hasRole('MANAGER')")
   @DeleteMapping("/{gradeId}")
   public ResponseEntity<String> deleteGrade(@PathVariable Long gradeId) {
@@ -54,6 +58,7 @@ public class GradeController {
     return ResponseEntity.ok("삭제 완료");
   }
 
+  @Operation(summary = "모든 등급 조회")
   @GetMapping("/all-grades")
   public ResponseEntity<Page<GradeResponse>> getAllGrades(
       @PageableDefault(sort = "minScore", direction = Sort.Direction.DESC) Pageable pageable
@@ -62,6 +67,7 @@ public class GradeController {
     return ResponseEntity.ok(gradeService.getAllGrades(pageable));
   }
 
+  @Operation(summary = "나의 등급 조회")
   @GetMapping("/my-grade")
   public ResponseEntity<GradeResponse> getMyGrade(
       @AuthenticationPrincipal CustomUserDetail userDetail

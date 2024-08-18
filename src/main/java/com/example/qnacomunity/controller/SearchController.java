@@ -3,6 +3,7 @@ package com.example.qnacomunity.controller;
 import com.example.qnacomunity.service.ElasticSearchService;
 import com.example.qnacomunity.type.SearchOrder;
 import com.example.qnacomunity.type.SearchRange;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class SearchController {
 
   private final ElasticSearchService elasticSearchService;
 
-  //제목 또는 내용 검색
+  @Operation(summary = "질문 검색(제목/내용)")
   @GetMapping("/word")
   public ResponseEntity<?> searchWord(
       @PageableDefault Pageable pageable,
@@ -36,7 +37,7 @@ public class SearchController {
     );
   }
 
-  //키워드 검색
+  @Operation(summary = "질문 검색(키워드)")
   @GetMapping("/keyword")
   public ResponseEntity<?> searchKeyword(
       @PageableDefault Pageable pageable,
@@ -46,6 +47,7 @@ public class SearchController {
     return ResponseEntity.ok(elasticSearchService.searchKeyword(pageable, keyword));
   }
 
+  @Operation(summary = "특정 질문의 연관글 조회")
   @GetMapping("/related-questions/{questionId}")
   public ResponseEntity<?> getRelatedQuestions(@PathVariable Long questionId) {
 

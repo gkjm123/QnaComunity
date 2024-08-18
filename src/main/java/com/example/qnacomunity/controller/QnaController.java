@@ -6,6 +6,7 @@ import com.example.qnacomunity.dto.response.AnswerResponse;
 import com.example.qnacomunity.dto.response.QuestionResponse;
 import com.example.qnacomunity.security.CustomUserDetail;
 import com.example.qnacomunity.service.QnaService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ public class QnaController {
 
   private final QnaService qnaService;
 
+  @Operation(summary = "질문 등록")
   @PostMapping("/question")
   public ResponseEntity<QuestionResponse> createQuestion(
       @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -39,12 +41,14 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.createQuestion(userDetail.getMemberResponse(), form));
   }
 
+  @Operation(summary = "특정 질문 조회")
   @GetMapping("/question/{questionId}")
   public ResponseEntity<QuestionResponse> getQuestion(@PathVariable Long questionId) {
 
     return ResponseEntity.ok(qnaService.getQuestion(questionId));
   }
 
+  @Operation(summary = "모든 질문 조회")
   @GetMapping("/questions")
   public ResponseEntity<Page<QuestionResponse>> getQuestions(
       @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
@@ -53,6 +57,7 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.getQuestions(pageable));
   }
 
+  @Operation(summary = "나의 질문 조회")
   @GetMapping("/my-questions")
   public ResponseEntity<Page<QuestionResponse>> getMyQuestions(
       @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -62,6 +67,7 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.getMyQuestions(userDetail.getMemberResponse(), pageable));
   }
 
+  @Operation(summary = "질문 수정")
   @PutMapping("/question/{questionId}")
   public ResponseEntity<QuestionResponse> updateQuestion(
       @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -73,6 +79,7 @@ public class QnaController {
         qnaService.updateQuestion(userDetail.getMemberResponse(), questionId, form));
   }
 
+  @Operation(summary = "질문 삭제")
   @DeleteMapping("/question/{questionId}")
   public ResponseEntity<String> deleteQuestion(
       @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -83,6 +90,7 @@ public class QnaController {
     return ResponseEntity.ok("삭제 완료");
   }
 
+  @Operation(summary = "답변 등록")
   @PostMapping("/answer")
   public ResponseEntity<AnswerResponse> createAnswer(
       @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -92,12 +100,14 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.createAnswer(userDetail.getMemberResponse(), form));
   }
 
+  @Operation(summary = "특정 답변 조회")
   @GetMapping("/answer/{answerId}")
   public ResponseEntity<AnswerResponse> getAnswer(@PathVariable Long answerId) {
 
     return ResponseEntity.ok(qnaService.getAnswer(answerId));
   }
 
+  @Operation(summary = "특정 질문의 모든 답변 조회")
   @GetMapping("/answers/{questionId}")
   public ResponseEntity<Page<AnswerResponse>> getAnswers(
       @PathVariable Long questionId,
@@ -107,6 +117,7 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.getAnswers(questionId, pageable));
   }
 
+  @Operation(summary = "나의 답변 조회")
   @GetMapping("/my-answers")
   public ResponseEntity<Page<AnswerResponse>> getMyAnswers(
       @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -116,6 +127,7 @@ public class QnaController {
     return ResponseEntity.ok(qnaService.getMyAnswers(userDetail.getMemberResponse(), pageable));
   }
 
+  @Operation(summary = "답변 수정")
   @PutMapping("/answer/{answerId}")
   public ResponseEntity<AnswerResponse> updateAnswer(
       @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -127,6 +139,7 @@ public class QnaController {
         qnaService.updateAnswer(userDetail.getMemberResponse(), answerId, form));
   }
 
+  @Operation(summary = "답변 삭제")
   @DeleteMapping("/answer/{answerId}")
   public ResponseEntity<String> deleteAnswer(
       @AuthenticationPrincipal CustomUserDetail userDetail,
@@ -137,6 +150,7 @@ public class QnaController {
     return ResponseEntity.ok("삭제 완료");
   }
 
+  @Operation(summary = "답변 채택")
   @PutMapping("/picked-answer/{answerId}")
   public ResponseEntity<String> pickAnswer(
       @AuthenticationPrincipal CustomUserDetail userDetail,
