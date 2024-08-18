@@ -42,7 +42,7 @@ public class MemberService {
   @Value("${cloud.aws.s3.bucket}")
   private String bucket;
 
-  public MemberResponse signUp(SignUpForm form) {
+  public MemberResponse signUp(SignUpForm form, Role role) {
 
     //비밀번호 확인란 일치 여부
     if (!Objects.equals(form.getPassword(), form.getPasswordCheck())) {
@@ -55,10 +55,10 @@ public class MemberService {
     }
 
     //새로운 멤버 생성
-    Member member =
-        memberRepository.save(
-            getNewMember(form.getLoginId(), form.getNickName(), form.getEmail(), form.getPassword())
-        );
+    Member member = getNewMember(form.getLoginId(), form.getNickName(), form.getEmail(), form.getPassword());
+    member.setRole(role);
+
+    memberRepository.save(member);
 
     //시작 스코어(50점) 제공
     member = memberScoreService.change(
