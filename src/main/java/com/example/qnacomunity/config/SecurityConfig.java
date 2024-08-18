@@ -29,6 +29,7 @@ public class SecurityConfig {
 
     http //page 부분은 프론트 에서 구현
         .authorizeHttpRequests((auth) -> auth
+            .requestMatchers( "/","/swagger-ui/**", "/v3/api-docs/**").permitAll()
             .requestMatchers(AntPathRequestMatcher.antMatcher("/page/home")).permitAll()
             .requestMatchers(AntPathRequestMatcher.antMatcher("/page/registration")).permitAll()
             .requestMatchers(AntPathRequestMatcher.antMatcher("/page/login")).permitAll()
