@@ -43,7 +43,7 @@ public class MemberController {
   }
 
   //로그인
-  @GetMapping("/login")
+  @PostMapping("/login")
   public ResponseEntity<String> signIn(@Valid @RequestBody MemberForm.SignInform form) {
 
     //JWT 토큰 생성
