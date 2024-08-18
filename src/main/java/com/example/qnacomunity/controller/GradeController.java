@@ -63,10 +63,10 @@ public class GradeController {
   }
 
   @GetMapping("/my-grade")
-  public ResponseEntity<GradeResponse> getMyGrade(
+  public ResponseEntity<String> getMyGrade(
       @AuthenticationPrincipal CustomUserDetail userDetail
   ) {
 
-    return ResponseEntity.ok(gradeService.getMyGrades(userDetail.getMemberResponse()));
+    return ResponseEntity.ok(gradeService.getMyGrades(userDetail.getMemberResponse().getScore()));
   }
 }

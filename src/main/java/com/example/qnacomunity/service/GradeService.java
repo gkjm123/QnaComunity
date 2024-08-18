@@ -2,12 +2,13 @@ package com.example.qnacomunity.service;
 
 import com.example.qnacomunity.dto.form.GradeForm;
 import com.example.qnacomunity.dto.response.GradeResponse;
-import com.example.qnacomunity.dto.response.MemberResponse;
 import com.example.qnacomunity.entity.Grade;
 import com.example.qnacomunity.exception.CustomException;
 import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.GradeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class GradeService {
 
   private final GradeRepository gradeRepository;
 
+  @CacheEvict(value = "grade", allEntries = true)
   @Transactional
   public GradeResponse createGrade(GradeForm form) {
 
@@ -45,19 +47,20 @@ public class GradeService {
     return gradeRepository.findAll(pageable).map(GradeResponse::from);
   }
 
+  @CacheEvict(value = "grade", allEntries = true)
   @Transactional
   public GradeResponse updateGrade(Long gradeId, GradeForm form) {
 
     //동일한 이름의 등급이 있는지 체크
-    if (gradeRepository.findByGradeName(form.getGradeName()).isPresent() &&
-        !gradeRepository.findByGradeName(form.getGradeName()).get().getId().equals(gradeId)
+    if (gradeRepository.findByGradeName(form.getGradeName())
+        .map(it -> !it.getId().equals(gradeId)).orElse(false)
     ) {
       throw new CustomException(ErrorCode.GRADE_NAME_EXIST);
     }
 
     //동일한 최소 스코어의 등급이 있는지 체크
-    if (gradeRepository.findByMinScore(form.getMinScore()).isPresent() &&
-        !gradeRepository.findByMinScore(form.getMinScore()).get().getId().equals(gradeId)
+    if (gradeRepository.findByMinScore(form.getMinScore())
+        .map(it -> !it.getId().equals(gradeId)).orElse(false)
     ) {
       throw new CustomException(ErrorCode.GRADE_SCORE_EXIST);
     }
@@ -71,19 +74,19 @@ public class GradeService {
     return GradeResponse.from(gradeRepository.save(grade));
   }
 
+  @CacheEvict(value = "grade", allEntries = true)
   @Transactional
   public void deleteGrade(Long gradeId) {
 
     gradeRepository.deleteById(gradeId);
   }
 
+  @Cacheable(key = "#score", value = "grade")
   @Transactional(readOnly = true)
-  public GradeResponse getMyGrades(MemberResponse memberResponse) {
+  public String getMyGrades(int score) {
 
-    Grade grade = gradeRepository
-        .findFirstByMinScoreIsLessThanEqualOrderByMinScoreDesc(memberResponse.getScore())
-        .orElseThrow(() -> new CustomException(ErrorCode.GRADE_NOT_FOUND));
-
-    return GradeResponse.from(grade);
+    return gradeRepository
+        .findFirstByMinScoreIsLessThanEqualOrderByMinScoreDesc(score)
+        .map(Grade::getGradeName).orElse(null);
   }
 }
