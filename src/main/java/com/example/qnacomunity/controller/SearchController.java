@@ -1,16 +1,18 @@
 package com.example.qnacomunity.controller;
 
-import com.example.qnacomunity.dto.form.SearchForm;
 import com.example.qnacomunity.service.ElasticSearchService;
-import jakarta.validation.Valid;
+import com.example.qnacomunity.type.SearchOrder;
+import com.example.qnacomunity.type.SearchRange;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequestMapping("/search")
@@ -24,20 +26,24 @@ public class SearchController {
   @GetMapping("/word")
   public ResponseEntity<?> searchWord(
       @PageableDefault Pageable pageable,
-      @Valid @RequestBody SearchForm.WordSearchForm form
+      @NotBlank(message = "검색어를 입력해주세요.") @RequestParam String word,
+      @NotNull(message = "정렬 순서 미지정") @RequestParam SearchOrder searchOrder,
+      @NotNull(message = "검색 범위 미지정") @RequestParam SearchRange searchRange
   ) {
 
-    return ResponseEntity.ok(elasticSearchService.searchWord(pageable, form));
+    return ResponseEntity.ok(
+        elasticSearchService.searchWord(pageable, word, searchOrder, searchRange)
+    );
   }
 
   //키워드 검색
   @GetMapping("/keyword")
   public ResponseEntity<?> searchKeyword(
       @PageableDefault Pageable pageable,
-      @Valid @RequestBody SearchForm.KeywordSearchForm form
+      @NotBlank(message = "키워드를 입력해주세요.") @RequestParam String keyword
   ) {
 
-    return ResponseEntity.ok(elasticSearchService.searchKeyword(pageable, form));
+    return ResponseEntity.ok(elasticSearchService.searchKeyword(pageable, keyword));
   }
 
   @GetMapping("/related-questions/{questionId}")

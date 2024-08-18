@@ -77,15 +77,20 @@ public class ElasticSearchService {
   }
 
   @Transactional
-  public List<QuestionResponse> searchWord(Pageable pageable, SearchForm.WordSearchForm form) {
+  public List<QuestionResponse> searchWord(
+      Pageable pageable,
+      String word,
+      SearchOrder searchOrder,
+      SearchRange searchRange
+  ) {
 
-    String word = form.getWord().toLowerCase().replace("  ", " ").trim();
+    word = word.toLowerCase().replace("  ", " ").trim();
 
     Query query;
     NativeQuery nativeQuery;
 
     //제목만 검색
-    if (form.getSearchRange() == SearchRange.TITLE) {
+    if (searchRange == SearchRange.TITLE) {
       query = QueryBuilders.match()
           .query(word)
           .field("title")
@@ -113,7 +118,7 @@ public class ElasticSearchService {
         .field(f -> f.field("created").order(SortOrder.Desc)).build();
 
     //최신순 검색
-    if (form.getSearchOrder() == SearchOrder.CREATION_TIME) {
+    if (searchOrder == SearchOrder.CREATION_TIME) {
       nativeQuery = new NativeQueryBuilder()
           .withQuery(query)
           .withSort(sortOptions)
@@ -136,9 +141,9 @@ public class ElasticSearchService {
   }
 
   @Transactional
-  public List<QuestionResponse> searchKeyword(Pageable pageable, SearchForm.KeywordSearchForm form) {
+  public List<QuestionResponse> searchKeyword(Pageable pageable, String keyword) {
 
-    String keyword = form.getKeyword().toLowerCase()
+    keyword = keyword.toLowerCase()
         .replace(" ", "")
         .replace("##", "#")
         .replace("#", " ")
