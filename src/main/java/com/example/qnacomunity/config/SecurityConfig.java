@@ -35,6 +35,7 @@ public class SecurityConfig {
             .requestMatchers(AntPathRequestMatcher.antMatcher("/page/login")).permitAll()
             .requestMatchers(AntPathRequestMatcher.antMatcher("/page/logout")).permitAll()
             .requestMatchers(AntPathRequestMatcher.antMatcher("/member/registration")).permitAll()
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/member/manager-registration")).permitAll()
             .requestMatchers(AntPathRequestMatcher.antMatcher("/member/login")).permitAll()
             .requestMatchers(AntPathRequestMatcher.antMatcher("/member/role")).permitAll()
             .anyRequest().authenticated()

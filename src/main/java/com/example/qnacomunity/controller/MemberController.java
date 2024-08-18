@@ -39,7 +39,14 @@ public class MemberController {
   @PostMapping("/registration")
   public ResponseEntity<?> signUp(@Valid @RequestBody MemberForm.SignUpForm form) {
 
-    return ResponseEntity.ok(memberService.signUp(form));
+    return ResponseEntity.ok(memberService.signUp(form, Role.ROLE_USER));
+  }
+
+  //매니저 회원 가입
+  @PostMapping("/manager-registration")
+  public ResponseEntity<?> managerSignUp(@Valid @RequestBody MemberForm.SignUpForm form) {
+
+    return ResponseEntity.ok(memberService.signUp(form, Role.ROLE_MANAGER));
   }
 
   //로그인
