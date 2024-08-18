@@ -138,10 +138,6 @@ public class QnaService {
       throw new CustomException(ErrorCode.SCORE_NOT_ENOUGH);
     }
 
-    question.setTitle(form.getTitle());
-    question.setContent(form.getContent());
-    question.setReward(form.getReward());
-
     //변경된 보상 스코어 만큼 멤버에게 스코어 증감 또는 차감
     if (question.getReward() != form.getReward()) {
       memberScoreService.change(
@@ -164,6 +160,10 @@ public class QnaService {
         memberResponse.getScore(), //변경 전 스코어
         memberResponse.getScore() + question.getReward() - form.getReward() //변경 후 스코어
     );
+
+    question.setTitle(form.getTitle());
+    question.setContent(form.getContent());
+    question.setReward(form.getReward());
 
     return QuestionResponse.from(questionRepository.save(question));
   }
