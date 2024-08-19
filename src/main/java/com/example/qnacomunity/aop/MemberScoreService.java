@@ -30,7 +30,7 @@ public class MemberScoreService {
       Question relatedQuestion
   ) {
 
-    Member member =  memberRepository.findById(memberId)
+    Member member = memberRepository.findById(memberId)
         .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
     //변경 전 스코어

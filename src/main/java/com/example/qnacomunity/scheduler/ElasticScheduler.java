@@ -1,11 +1,11 @@
 package com.example.qnacomunity.scheduler;
 
-import com.example.qnacomunity.exception.CustomException;
-import com.example.qnacomunity.exception.ErrorCode;
-import com.example.qnacomunity.service.ElasticSearchService;
 import com.example.qnacomunity.entity.ElasticFailure;
 import com.example.qnacomunity.entity.Question;
+import com.example.qnacomunity.exception.CustomException;
+import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.ElasticFailureRepository;
+import com.example.qnacomunity.service.ElasticSearchService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class ElasticScheduler {
         try {
           Question question = elasticFailure.getQuestion();
 
-          switch(elasticFailure.getElasticFailureType()) {
+          switch (elasticFailure.getElasticFailureType()) {
 
             case SAVE_FAIL:
               elasticSearchService.save(question);

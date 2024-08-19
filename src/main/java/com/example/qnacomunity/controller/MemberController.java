@@ -38,14 +38,16 @@ public class MemberController {
 
   @Operation(summary = "일반 회원 가입")
   @PostMapping("/registration")
-  public ResponseEntity<?> signUp(@Valid @RequestBody MemberForm.SignUpForm form) {
+  public ResponseEntity<MemberResponse> signUp(@Valid @RequestBody MemberForm.SignUpForm form) {
 
     return ResponseEntity.ok(memberService.signUp(form, Role.ROLE_USER));
   }
 
   @Operation(summary = "매니저 회원 가입")
   @PostMapping("/manager-registration")
-  public ResponseEntity<?> managerSignUp(@Valid @RequestBody MemberForm.SignUpForm form) {
+  public ResponseEntity<MemberResponse> managerSignUp(
+      @Valid @RequestBody MemberForm.SignUpForm form
+  ) {
 
     return ResponseEntity.ok(memberService.signUp(form, Role.ROLE_MANAGER));
   }
@@ -80,13 +82,17 @@ public class MemberController {
 
   @Operation(summary = "멤버 등급 확인")
   @GetMapping("/info")
-  public ResponseEntity<MemberResponse> getInfo(@AuthenticationPrincipal CustomUserDetail userDetail) {
+  public ResponseEntity<MemberResponse> getInfo(
+      @AuthenticationPrincipal CustomUserDetail userDetail
+  ) {
+
     return ResponseEntity.ok(userDetail.getMemberResponse());
   }
 
   @Operation(summary = "멤버 정보 수정")
   @PutMapping("/info")
-  public ResponseEntity<?> updateInfo(@AuthenticationPrincipal CustomUserDetail userDetail,
+  public ResponseEntity<MemberResponse> updateInfo(
+      @AuthenticationPrincipal CustomUserDetail userDetail,
       @Valid @RequestBody MemberForm.UpdateInfoForm form
   ) {
 
@@ -108,7 +114,8 @@ public class MemberController {
 
   @Operation(summary = "비밀번호 변경")
   @PutMapping("/password")
-  public ResponseEntity<?> updatePassword(@AuthenticationPrincipal CustomUserDetail userDetail,
+  public ResponseEntity<MemberResponse> updatePassword(
+      @AuthenticationPrincipal CustomUserDetail userDetail,
       @Valid @RequestBody MemberForm.PasswordChangeForm form
   ) {
 
@@ -118,6 +125,7 @@ public class MemberController {
   @Operation(summary = "회원 탈퇴")
   @DeleteMapping("/removal")
   public ResponseEntity<String> delete(@AuthenticationPrincipal CustomUserDetail userDetail) {
+
     memberService.delete(userDetail.getMemberResponse());
     return ResponseEntity.ok("회원 탈퇴 완료");
   }

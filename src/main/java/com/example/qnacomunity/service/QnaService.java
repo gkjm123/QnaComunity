@@ -44,7 +44,6 @@ public class QnaService {
   private static final int PAYBACK_SCORE = 5;
   private final RankService rankService;
 
-
   public QuestionResponse createQuestion(MemberResponse memberResponse, QuestionForm form) {
 
     //질문자가 보상 스코어 보다 많이 가지고 있는지 체크
@@ -142,7 +141,8 @@ public class QnaService {
     if (question.getReward() != form.getReward()) {
       memberScoreService.change(
           memberResponse.getId(),
-          question.getReward() - form.getReward() > 0 ? ScoreChangeType.PLUS : ScoreChangeType.MINUS,
+          question.getReward() - form.getReward() > 0 ? ScoreChangeType.PLUS
+              : ScoreChangeType.MINUS,
           Math.abs(question.getReward() - form.getReward()),
           ScoreDescription.QUESTION_CHANGE,
           question
@@ -246,7 +246,7 @@ public class QnaService {
 
     //해당 멤버가 작성한 답변 반환
     Page<Answer> answers = answerRepository
-            .findAllByMember_Id(memberResponse.getId(), pageable);
+        .findAllByMember_Id(memberResponse.getId(), pageable);
 
     return answers.map(AnswerResponse::from);
   }
@@ -342,7 +342,8 @@ public class QnaService {
     answer.setPickedAt(LocalDateTime.now());
   }
 
-  private void setKeywords(Question question, QuestionForm form) {
+  @Transactional
+  public void setKeywords(Question question, QuestionForm form) {
 
     List<String> keywords = KeywordUtil.getKeywords(form);
     Map<String, List<String>> keywordMap = new HashMap<>();

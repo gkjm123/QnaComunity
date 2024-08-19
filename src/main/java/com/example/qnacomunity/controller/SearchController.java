@@ -1,10 +1,12 @@
 package com.example.qnacomunity.controller;
 
+import com.example.qnacomunity.dto.response.QuestionResponse;
 import com.example.qnacomunity.service.ElasticSearchService;
 import com.example.qnacomunity.type.SearchRange;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -25,7 +27,7 @@ public class SearchController {
 
   @Operation(summary = "질문 검색(제목/내용, 정확도순)")
   @GetMapping("/related-word")
-  public ResponseEntity<?> searchWordByRelated(
+  public ResponseEntity<List<QuestionResponse>> searchWordByRelated(
       @PageableDefault Pageable pageable,
       @NotBlank(message = "검색어를 입력해주세요.") @RequestParam String word,
       @NotNull(message = "검색 범위 미지정") @RequestParam SearchRange searchRange
@@ -38,7 +40,7 @@ public class SearchController {
 
   @Operation(summary = "질문 검색(제목/내용, 최신순)")
   @GetMapping("/latest-word")
-  public ResponseEntity<?> searchWordByLatest(
+  public ResponseEntity<List<QuestionResponse>> searchWordByLatest(
       @PageableDefault(sort = "created", direction = Direction.DESC) Pageable pageable,
       @NotBlank(message = "검색어를 입력해주세요.") @RequestParam String word,
       @NotNull(message = "검색 범위 미지정") @RequestParam SearchRange searchRange
@@ -51,7 +53,7 @@ public class SearchController {
 
   @Operation(summary = "질문 검색(키워드)")
   @GetMapping("/keyword")
-  public ResponseEntity<?> searchKeyword(
+  public ResponseEntity<List<QuestionResponse>> searchKeyword(
       @PageableDefault(sort = "created", direction = Direction.DESC) Pageable pageable,
       @NotBlank(message = "키워드를 입력해주세요.") @RequestParam String keyword
   ) {
@@ -61,7 +63,7 @@ public class SearchController {
 
   @Operation(summary = "특정 질문의 연관글 조회")
   @GetMapping("/related-questions/{questionId}")
-  public ResponseEntity<?> getRelatedQuestions(@PathVariable Long questionId) {
+  public ResponseEntity<List<QuestionResponse>> getRelatedQuestions(@PathVariable Long questionId) {
 
     return ResponseEntity.ok(elasticSearchService.getRelatedQuestions(questionId));
   }

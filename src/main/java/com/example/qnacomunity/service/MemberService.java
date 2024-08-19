@@ -57,7 +57,6 @@ public class MemberService {
     //새로운 멤버 생성
     Member member = getNewMember(form.getLoginId(), form.getNickName(), form.getEmail(), form.getPassword());
     member.setRole(role);
-
     memberRepository.save(member);
 
     //시작 스코어(50점) 제공

@@ -165,11 +165,11 @@ public class ElasticSearchService {
         .build()._toQuery();
 
     //결과에 질문글 자신이 들어있으면 제외해야 하므로 3+1 개를 받음
-    PageRequest pageRequest = PageRequest.of(0, 4);
+    Pageable pageable = PageRequest.of(0, 4);
 
     NativeQuery nativeQuery = new NativeQueryBuilder()
         .withQuery(matchQuery)
-        .withPageable(pageRequest)
+        .withPageable(pageable)
         .build();
 
     SearchHits<QuestionDocument> searchHits =

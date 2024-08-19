@@ -25,6 +25,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScoreHistory {
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;

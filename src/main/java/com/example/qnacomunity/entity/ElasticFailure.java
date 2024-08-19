@@ -24,6 +24,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ElasticFailure {
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
