@@ -1,8 +1,5 @@
 package com.example.qnacomunity.service;
 
-
-import co.elastic.clients.elasticsearch._types.SortOptions;
-import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
@@ -137,7 +134,6 @@ public class ElasticSearchService {
         .field("keywords")
         .operator(Operator.And)
         .build()._toQuery();
-
 
     NativeQuery nativeQuery = new NativeQueryBuilder()
         .withQuery(matchQuery)

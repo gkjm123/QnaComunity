@@ -342,7 +342,6 @@ public class QnaService {
     answer.setPickedAt(LocalDateTime.now());
   }
 
-  @Transactional
   public void setKeywords(Question question, QuestionForm form) {
 
     List<String> keywords = KeywordUtil.getKeywords(form);
