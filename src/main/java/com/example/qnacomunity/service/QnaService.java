@@ -340,6 +340,7 @@ public class QnaService {
 
     //채택된 답변에 채택 시간(picked_at) 세팅
     answer.setPickedAt(LocalDateTime.now());
+    answerRepository.save(answer);
   }
 
   public void setKeywords(Question question, QuestionForm form) {
