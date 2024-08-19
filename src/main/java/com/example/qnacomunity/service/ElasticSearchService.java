@@ -6,7 +6,6 @@ import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
-import com.example.qnacomunity.dto.form.SearchForm;
 import com.example.qnacomunity.dto.response.QuestionResponse;
 import com.example.qnacomunity.elasticsearch.ElasticSearchRepository;
 import com.example.qnacomunity.elasticsearch.QuestionDocument;
@@ -17,7 +16,6 @@ import com.example.qnacomunity.exception.ErrorCode;
 import com.example.qnacomunity.repository.ElasticFailureRepository;
 import com.example.qnacomunity.repository.QuestionRepository;
 import com.example.qnacomunity.type.ElasticFailureType;
-import com.example.qnacomunity.type.SearchOrder;
 import com.example.qnacomunity.type.SearchRange;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -80,7 +78,6 @@ public class ElasticSearchService {
   public List<QuestionResponse> searchWord(
       Pageable pageable,
       String word,
-      SearchOrder searchOrder,
       SearchRange searchRange
   ) {
 
@@ -114,25 +111,10 @@ public class ElasticSearchService {
           .build()._toQuery();
     }
 
-    SortOptions sortOptions = new SortOptions.Builder()
-        .field(f -> f.field("created").order(SortOrder.Desc)).build();
-
-    //최신순 검색
-    if (searchOrder == SearchOrder.CREATION_TIME) {
-      nativeQuery = new NativeQueryBuilder()
-          .withQuery(query)
-          .withSort(sortOptions)
-          .withPageable(pageable)
-          .build();
-    }
-
-    //정확도순 검색
-    else {
-      nativeQuery = new NativeQueryBuilder()
-          .withQuery(query)
-          .withPageable(pageable)
-          .build();
-    }
+    nativeQuery = new NativeQueryBuilder()
+        .withQuery(query)
+        .withPageable(pageable)
+        .build();
 
     SearchHits<QuestionDocument> searchHits =
         elasticsearchOperations.search(nativeQuery, QuestionDocument.class);
@@ -156,12 +138,9 @@ public class ElasticSearchService {
         .operator(Operator.And)
         .build()._toQuery();
 
-    SortOptions sortOptions = new SortOptions.Builder()
-        .field(f -> f.field("created").order(SortOrder.Desc)).build();
 
     NativeQuery nativeQuery = new NativeQueryBuilder()
         .withQuery(matchQuery)
-        .withSort(sortOptions)
         .withPageable(pageable)
         .build();
 
