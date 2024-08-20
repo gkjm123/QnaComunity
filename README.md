@@ -63,7 +63,7 @@
   * RedisCache 를 이용해 이미 조회했던 스코어에 대한 등급을 바로 반환해줍니다. 
 
 ### ERD
-![qna](https://github.com/user-attachments/assets/5ac679b9-a0ec-4f85-bcb7-f9e27d6492f4)
+![qna](https://github.com/user-attachments/assets/8bd7ede9-18da-4aec-a6e0-865d9e6277cf)
 
 
 ### 사용 기술
